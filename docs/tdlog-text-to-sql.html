@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Text-to-SQL, première marche</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Page élèves, première marche d'un projet TDLOG : clair par défaut, Helvetica Neue, palette TDLOG. Une scène animée du concept au produit, la première marche, la préparation de l'architecture. */
+:root{
+  --paper:#FBFAF6; --card:#FFFFFF; --ink:#1C2430; --ink2:#4A5460; --faint:#8A93A0; --cloud:#D3D7DD;
+  --rule:rgba(28,36,48,.16); --soft:rgba(28,36,48,.05);
+  --blue:#1F5FA8; --bluebg:rgba(31,95,168,.10); --red:#B23A2C; --redbg:rgba(178,58,44,.10); --green:#2E7D4F; --greenbg:rgba(46,125,79,.13);
+  --sans:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --paper:#141A21; --card:#1B232C; --ink:#E6EAEF; --ink2:#AEB6C0; --faint:#7C8691; --cloud:#3A4552;
+  --rule:rgba(230,236,242,.16); --soft:rgba(230,236,242,.06);
+  --blue:#7FB0E8; --bluebg:rgba(127,176,232,.14); --red:#E88A7C; --redbg:rgba(232,138,124,.14); --green:#79C79A; --greenbg:rgba(121,199,154,.15);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--paper)}
+body{margin:0;font-family:var(--sans);color:var(--ink);font-size:17px;line-height:1.55}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+code,.mono{font-family:var(--mono);font-size:.84em}
+code{background:var(--soft);padding:.05em .3em;border-radius:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+.wrap{max-width:1180px;margin:0 auto;padding-block:1.6rem 5rem;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.hero{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-start;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:1rem}
+.hero .k{font-size:.85rem;color:var(--faint)}
+.hero h1{margin:.2rem 0 .4rem;font-size:2.4rem;line-height:1.05;letter-spacing:-.02em;text-wrap:balance}
+.hero p{margin:.2rem 0;max-width:46rem;color:var(--ink2)}
+.tbtn,button{font:inherit;font-size:.86rem;padding:.35rem .8rem;border:1.5px solid var(--ink);background:var(--card);color:var(--ink);border-radius:2px;cursor:pointer}
+button.primary{background:var(--ink);color:var(--paper)}
+button:disabled{opacity:.35;cursor:default}
+.toc{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;margin:1rem 0 0;font-size:.92rem}
+.toc a{color:var(--ink);text-decoration:none;border-bottom:1.5px solid var(--rule)}
+.toc a b{font-family:var(--mono);color:var(--faint);margin-right:.3rem}
+h2.part{display:flex;gap:.8rem;align-items:baseline;margin:3.2rem 0 .3rem;font-size:1.75rem;line-height:1.15;scroll-margin-top:1rem;text-wrap:balance}
+h2.part span{font-size:2.6rem;color:var(--faint);font-weight:700;line-height:1}
+.lead{color:var(--ink2);max-width:52rem;margin:.2rem 0 1rem}
+
+/* scène */
+.player{border:1.5px solid var(--ink);border-radius:3px;background:var(--card);overflow:hidden}
+.player:fullscreen{display:flex;flex-direction:column;border:0;border-radius:0;background:var(--paper)}
+.player:fullscreen .scene{flex:1;min-height:0}
+.chapters{display:flex;flex-wrap:wrap;gap:0;border-bottom:1px solid var(--rule);background:var(--soft)}
+.chapters button{border:0;border-right:1px solid var(--rule);border-radius:0;background:transparent;font-size:.78rem;padding:.4rem .7rem;color:var(--ink2)}
+.chapters button.on{background:var(--ink);color:var(--paper)}
+.chapters button.done{color:var(--ink)}
+.scene{position:relative;min-height:27rem;padding:1.2rem 1.3rem;display:flex;flex-direction:column;justify-content:center;gap:.9rem}
+.cap{border-top:1px solid var(--rule);padding:.9rem 1.3rem;display:grid;grid-template-columns:minmax(0,1fr);gap:.4rem}
+.cap h3{margin:0;font-size:1.3rem;line-height:1.25;text-wrap:balance}
+.cap p{margin:0;max-width:62rem}
+.cap .def{border-left:3px solid var(--green);background:var(--greenbg);padding:.35rem .65rem;font-size:.95rem;max-width:62rem}
+.cap .def b{color:var(--green)}
+.cap .trap{border-left:3px solid var(--red);background:var(--redbg);padding:.35rem .65rem;font-size:.95rem;max-width:62rem}
+.cap .trap b{color:var(--red)}
+.ctrl{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;padding:.6rem 1.3rem;border-top:1px solid var(--rule);background:var(--soft)}
+.ctrl .count{margin-left:auto;font-size:.82rem;color:var(--faint);font-variant-numeric:tabular-nums}
+.ctrl .hint{font-size:.78rem;color:var(--faint)}
+.kbd{font-family:var(--mono);font-size:.74rem;border:1px solid var(--rule);border-bottom-width:2px;padding:0 .3em;border-radius:3px;color:var(--ink2)}
+.ill{font-size:.75rem;color:var(--faint);font-style:italic}
+
+.fade{animation:fade .45s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.row{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;justify-content:center}
+.col{display:flex;flex-direction:column;gap:.5rem}
+.bx{border:1.5px solid var(--ink);border-radius:3px;padding:.55rem .8rem;background:var(--card);min-width:0}
+.bx.soft{border-color:var(--rule)}
+.bx.blue{border-color:var(--blue);background:var(--bluebg)}
+.bx.green{border-color:var(--green);background:var(--greenbg)}
+.bx.red{border-color:var(--red);background:var(--redbg)}
+.bx .lbl{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--ink2);margin-bottom:.2rem}
+.bx.model{text-align:center;min-width:9rem}
+.bx.model b{font-size:1.15rem}
+.arr{font-size:1.6rem;color:var(--faint);line-height:1}
+.pulse{animation:pulse 1s ease 2}
+@keyframes pulse{50%{box-shadow:0 0 0 7px var(--bluebg)}}
+.typed{font-family:var(--mono);font-size:.92rem;white-space:pre-wrap;min-height:1.4em}
+.big{font-size:2.2rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.ok{color:var(--green);font-weight:700}.ko{color:var(--red);font-weight:700}
+.en{font-size:.92rem;line-height:1.45;font-style:italic}
+.num{display:inline-block;border-radius:2px;padding:0 .15rem;transition:background .3s,box-shadow .3s}
+.num.hit{background:var(--bluebg);box-shadow:0 0 0 2px var(--blue)}
+.num.bad{background:var(--redbg);box-shadow:0 0 0 2px var(--red)}
+table.t{border-collapse:collapse;width:100%;font-size:.88rem}
+table.t th{text-align:left;border-bottom:1.5px solid var(--ink);padding:.25rem .5rem;font-weight:700}
+table.t td{border-bottom:1px solid var(--rule);padding:.3rem .5rem;vertical-align:top}
+table.t td.n{text-align:right;font-family:var(--mono);white-space:nowrap}
+.sq{display:grid;grid-template-columns:repeat(25,minmax(0,1fr));gap:3px;width:100%;max-width:40rem}
+.sq.s50{grid-template-columns:repeat(25,minmax(0,1fr))}
+.sq i{display:block;aspect-ratio:1;border-radius:2px;border:1.5px solid var(--rule);background:var(--card);position:relative;transition:background .2s,opacity .25s}
+.sq i.y{background:var(--green);border-color:var(--green)}
+.sq i.n{background:var(--red);border-color:var(--red)}
+.sq i.z{opacity:.15}
+.sq i.dim{opacity:.25}
+.sq i.ring{box-shadow:0 0 0 2px var(--blue)}
+.sq i b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.58rem;color:#fff;font-style:normal}
+.sqrow{display:grid;grid-template-columns:9.5rem minmax(0,1fr) 4.5rem;gap:.6rem;align-items:center;width:100%;max-width:56rem}
+.sqrow .l{font-size:.85rem;color:var(--ink2)}
+.sqrow .r{font-family:var(--mono);font-weight:600;text-align:right}
+@media (max-width:640px){.sqrow{grid-template-columns:minmax(0,1fr)}.sqrow .r{text-align:left}}
+svg.dg{display:block;width:100%;height:auto}
+svg.dg text{font-family:var(--sans);fill:var(--ink);font-size:12px}
+svg.dg .tk{font-family:var(--mono);font-size:11px;fill:var(--ink2)}
+.cells{display:grid;grid-template-columns:repeat(50,minmax(0,1fr));gap:1px;width:100%}
+.cells i{display:block;aspect-ratio:1;background:var(--soft);border-radius:1px}
+.cells i.d{background:var(--ink)}
+.cells i.c{background:var(--blue)}
+.cells i.w{background:var(--green)}
+.camp{display:grid;grid-template-columns:8rem minmax(0,1fr);gap:.3rem .7rem;align-items:center;width:100%;max-width:60rem;font-size:.8rem}
+.clock{display:flex;flex-wrap:wrap;gap:.6rem 1.4rem;font-size:.9rem}
+.clock b{font-family:var(--mono)}
+.verdict{font-size:1.25rem;font-weight:700}
+.badge{display:inline-flex;align-items:center;justify-content:center;width:1.5rem;height:1.5rem;border-radius:50%;background:var(--ink);color:var(--paper);font-size:.78rem;font-weight:700;margin-right:.4rem;flex:none}
+.final{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.6rem;width:100%;max-width:62rem}
+.final .bx{grid-column:span 3;font-size:.82rem}
+.final .bx.w2{grid-column:span 2}
+.final .bx.w6{grid-column:span 6}
+@media (max-width:640px){.final .bx,.final .bx.w2{grid-column:span 6}}
+.final .bx .t{display:flex;align-items:center;font-weight:700;margin-bottom:.3rem}
+.ci{position:relative;height:1rem}
+.ci i{position:absolute;top:.45rem;height:0;border-top:2px solid var(--ink)}
+.ci b{position:absolute;top:.15rem;width:9px;height:9px;border-radius:50%;background:var(--blue);margin-left:-4.5px}
+
+/* sections statiques */
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(15rem,100%),1fr));gap:1rem}
+@media (max-width:760px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.card{border:1.5px solid var(--ink);border-radius:3px;background:var(--card);padding:.85rem 1rem;min-width:0}
+.card h3{margin:0 0 .4rem;font-size:1.1rem;display:flex;align-items:center}
+.card p{margin:.2rem 0 .5rem;font-size:.95rem}
+.card .done{border-top:1px solid var(--rule);padding-top:.45rem;font-size:.9rem}
+.card .done b{color:var(--green)}
+.card ul{margin:.2rem 0 .4rem;padding-left:1.1rem;font-size:.95rem}
+.term{background:#1C2430;color:#F6F7F4;font-family:var(--mono);font-size:.82rem;line-height:1.6;border-radius:3px;padding:.9rem 1.1rem;overflow-x:auto;white-space:pre;margin:.4rem 0}
+.term .p{color:#9DBCE3}.term .g{color:#A7D3B6}.term .c{color:#8A93A0}
+.note{border-left:3px solid var(--ink2);padding:.15rem 0 .15rem .8rem;margin:.8rem 0;color:var(--ink2);max-width:58rem}
+.note b{color:var(--ink)}
+.note.say{border-color:var(--green)} .note.say b{color:var(--green)}
+.note.trap{border-color:var(--red)} .note.trap b{color:var(--red)}
+ul.no{list-style:none;padding:0;margin:.3rem 0;display:flex;flex-wrap:wrap;gap:.4rem}
+ul.no li{border:1.5px dashed var(--ink2);border-radius:2px;padding:.1rem .55rem;font-size:.88rem;color:var(--ink2)}
+ol.qs{padding-left:1.3rem;max-width:58rem}
+ol.qs li{margin:.5rem 0}
+ol.qs li span{display:block;font-size:.88rem;color:var(--ink2)}
+.check{list-style:none;padding:0;margin:.3rem 0}
+.check li{display:flex;gap:.5rem;align-items:flex-start;margin:.25rem 0}
+.check li::before{content:"□";font-family:var(--mono);color:var(--ink2)}
+footer{margin-top:3rem;border-top:2px solid var(--ink);padding-top:.8rem;font-size:.82rem;color:var(--faint)}
+.arch .node{fill:var(--card);stroke:var(--ink);stroke-width:1.6}
+.arch .node.core{fill:var(--greenbg);stroke:var(--green)}
+.arch .node.ext{fill:var(--bluebg);stroke:var(--blue)}
+.arch .node.later{fill:none;stroke:var(--faint);stroke-dasharray:5 4}
+.arch .zone{fill:none;stroke:var(--green);stroke-width:1.4;stroke-dasharray:6 4}
+.arch .mono{fill:var(--card);stroke:var(--red);stroke-width:2}
+.arch text{font-family:var(--sans);font-size:12.5px;fill:var(--ink)}
+.arch text.s{font-size:10.5px;fill:var(--ink2)}
+.arch text.q{font-size:16px;font-weight:700;fill:var(--red)}
+.arch .ed{stroke:var(--ink2);stroke-width:1.6;fill:none}
+.arch .ed.red{stroke:var(--red)}
+.arch .ed.q{stroke:var(--red);stroke-dasharray:4 4}
+.arch g{transition:opacity .4s}
+.arch .off{opacity:0}
+
+.rv{opacity:0}
+.rv.on{opacity:1;animation:fade .45s ease both}
+.chips{display:flex;flex-wrap:wrap;gap:4px;font-family:var(--mono);font-size:.85rem}
+.chips span{border:1.5px solid var(--ink2);border-radius:2px;padding:.05rem .4rem;background:var(--card)}
+.chips span.k{border-color:var(--blue);color:var(--blue);background:var(--bluebg)}
+.chips span.x{border-color:var(--red);color:var(--red);background:var(--redbg);text-decoration:line-through}
+.code{font-family:var(--mono);font-size:.82rem;white-space:pre;overflow-x:auto;background:var(--soft);border-radius:2px;padding:.5rem .7rem;line-height:1.55;max-width:100%}
+.code .k{color:var(--blue);font-weight:600}
+.code u{text-decoration:underline wavy var(--red);text-underline-offset:3px;color:var(--red)}
+.tree{font-family:var(--mono);font-size:.8rem;white-space:pre;overflow-x:auto;line-height:1.5}
+.tree b{color:var(--red)}
+.flow{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;justify-content:center}
+.flow .bx{font-size:.85rem;text-align:center}
+.flow .bx small{display:block;font-size:.7rem;color:var(--ink2);font-family:var(--mono)}
+.mini{font-size:.82rem}
+.state{display:inline-flex;align-items:center;justify-content:center;width:1.9rem;height:1.9rem;border-radius:50%;border:1.8px solid var(--ink);font-size:.8rem;font-weight:700;background:var(--card)}
+.state.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.state.acc{box-shadow:inset 0 0 0 3px var(--card),inset 0 0 0 4.5px var(--ink)}
+.state.dead{background:var(--red);border-color:var(--red);color:#fff}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:.15rem;justify-content:center}
+.chain .ed{font-family:var(--mono);font-size:.72rem;color:var(--ink2);min-width:1.6rem;text-align:center}
+.slots{display:flex;flex-wrap:wrap;gap:3px;justify-content:center}
+.slots span{min-width:2rem;text-align:center;border:1.5px solid var(--rule);border-radius:2px;padding:.1rem .2rem;font-family:var(--mono);background:var(--card)}
+.slots span.f{border-color:var(--ink);font-weight:600}
+.slots span.n{border-color:var(--blue);background:var(--bluebg);font-weight:700}
+.slots span.b{border-color:var(--red);background:var(--redbg);color:var(--red);font-weight:700}
+.bars{display:flex;flex-direction:column;gap:3px;font-size:.82rem;width:100%;max-width:30rem}
+.bars div{display:grid;grid-template-columns:5rem minmax(0,1fr) 3rem;gap:.4rem;align-items:center}
+.bars div span:first-child{font-family:var(--mono);white-space:pre}
+.bars i{display:block;height:.65rem;background:var(--ink2);border-radius:1px}
+.bars .no{color:var(--faint)} .bars .no i{background:var(--cloud)} .bars .no span:first-child{text-decoration:line-through}
+.bars .pick{font-weight:700} .bars .pick i{background:var(--blue)}
+.bars div span:last-child{text-align:right;font-family:var(--mono)}
+.env{display:grid;grid-template-columns:repeat(auto-fill,minmax(9rem,1fr));gap:.5rem;width:100%;max-width:56rem}
+.env > div{border:1.5px solid var(--rule);border-radius:3px;padding:.4rem .55rem;font-size:.8rem;background:var(--card)}
+.env b{display:block;font-size:.9rem}
+.env .fill{height:.55rem;border:1.5px solid var(--ink);border-radius:2px;margin:.3rem 0;overflow:hidden}
+.env .fill i{display:block;height:100%;background:var(--ink)}
+.env .fill i.over{background:var(--red)}
+.env .rest{font-family:var(--mono);font-weight:600}
+.track7{position:absolute;top:.8rem;left:1.3rem;right:1.3rem;display:flex;flex-wrap:wrap;gap:.25rem;align-items:center;justify-content:center;font-size:.76rem}
+.track7 .ts{border:1.5px solid var(--rule);border-radius:2px;padding:.1rem .45rem;color:var(--faint);background:var(--card)}
+.track7 .ts.on{border-color:var(--blue);background:var(--bluebg);color:var(--ink);font-weight:700;box-shadow:0 0 0 2px var(--bluebg)}
+.track7 .ta{color:var(--faint)}
+.track7 .note7{flex-basis:100%;text-align:center;font-style:italic;color:var(--faint);font-size:.74rem}
+.cap .what{border-left:3px solid var(--blue);background:var(--bluebg);padding:.35rem .65rem;font-size:.97rem;max-width:62rem}
+.cap .what b{color:var(--blue)}
+ol.steps{margin:.2rem 0 .5rem;padding-left:1.2rem;font-size:.95rem}
+ol.steps li{margin:.3rem 0}
+pre.code{margin:.4rem 0}
+.code .c{color:var(--faint)}
+.card code{overflow-wrap:anywhere}
+code,.mono,.code,.term,pre{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
+.app{width:100%;max-width:58rem;border:1.5px solid var(--ink);border-radius:6px;background:var(--card);overflow:hidden;font-size:.8rem;text-align:left;align-self:center}
+.app .bar{display:flex;gap:.35rem;align-items:center;padding:.35rem .6rem;background:var(--soft);border-bottom:1px solid var(--cloud)}
+.app .bar i{width:.55rem;height:.55rem;border-radius:50%;background:var(--cloud);flex:none}
+.app .url{flex:1;min-width:0;margin-left:.4rem;background:var(--card);border:1px solid var(--cloud);border-radius:3px;padding:.05rem .5rem;font-family:var(--mono);font-size:.7rem;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app .abody{display:grid;grid-template-columns:9.5rem minmax(0,1fr);min-height:19rem}
+.app nav{border-right:1px solid var(--cloud);padding:.6rem .5rem;display:flex;flex-direction:column;gap:.2rem;background:var(--paper)}
+.app nav .brand{font-weight:800;padding:.1rem .45rem .5rem;font-size:.82rem}
+.app nav button{all:unset;cursor:pointer;padding:.3rem .5rem;border-radius:3px;color:var(--ink2)}
+.app nav button:hover{background:var(--soft)}
+.app nav button:focus-visible{outline:2px solid var(--blue)}
+.app nav button.on{background:var(--bluebg);color:var(--blue);font-weight:700}
+.app main{padding:.75rem .9rem;display:flex;flex-direction:column;gap:.6rem;min-width:0}
+.app h4{margin:0;font-size:.95rem}
+.app .row2{display:flex;flex-wrap:wrap;gap:.45rem;align-items:flex-end}
+.app .uin{display:flex;flex-direction:column;gap:.1rem;min-width:0}
+.app .uin small{font-size:.66rem;color:var(--faint);text-transform:uppercase;letter-spacing:.04em}
+.app .uin span{border:1px solid var(--cloud);border-radius:3px;padding:.2rem .45rem;background:var(--card);font-family:var(--mono);font-size:.74rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.app .ubtn{display:inline-block;background:var(--blue);color:var(--card);border-radius:3px;padding:.25rem .75rem;font-weight:700;white-space:nowrap}
+.app .ubtn.ghost{background:none;color:var(--blue);border:1px solid var(--blue)}
+.app .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));gap:.45rem}
+.app .kpi div{border:1px solid var(--cloud);border-radius:4px;padding:.35rem .55rem}
+.app .kpi small{display:block;font-size:.66rem;color:var(--faint)}
+.app .kpi b{font-size:1.05rem;font-family:var(--mono)}
+.app table{border-collapse:collapse;width:100%;font-size:.76rem}
+.app th{text-align:left;font-weight:600;color:var(--faint);font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--cloud);padding:.2rem .35rem}
+.app td{border-bottom:1px solid var(--soft);padding:.25rem .35rem;vertical-align:top}
+.app td.n,.app th.n{text-align:right;font-family:var(--mono);white-space:nowrap}
+.app .tw{overflow-x:auto;max-width:100%}
+.app .pbar{height:.5rem;border-radius:3px;background:var(--soft);overflow:hidden}
+.app .pbar i{display:block;height:100%;background:var(--blue)}
+.app .pbar i.g{background:var(--green)}.app .pbar i.r{background:var(--red)}
+.app .tag{display:inline-block;border-radius:3px;padding:0 .35rem;font-size:.7rem;font-weight:700}
+.app .tag.ok{background:var(--greenbg);color:var(--green)}.app .tag.ko{background:var(--redbg);color:var(--red)}.app .tag.bl{background:var(--bluebg);color:var(--blue)}.app .tag.gy{background:var(--soft);color:var(--ink2)}
+.app .banner{border-left:3px solid var(--red);background:var(--redbg);padding:.3rem .55rem;font-size:.74rem}
+.app .box{border:1px solid var(--cloud);border-radius:4px;padding:.45rem .6rem}
+.app pre{margin:0;font-family:var(--mono);font-size:.72rem;white-space:pre-wrap;background:var(--soft);padding:.4rem .55rem;border-radius:3px}
+.app .g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));gap:.5rem}
+.app .dg{max-width:100%}
+@media (max-width:640px){.app .abody{grid-template-columns:1fr}.app nav{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--cloud)}.app nav .brand{width:100%;padding-bottom:.2rem}}
+.app .uin{flex:none;max-width:100%}
+.note>b:first-child{display:block;margin-bottom:.1rem}
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <div>
+    <div class="k">TDLOG · projet « Text-to-SQL vérifié » · groupe de Salah Chadli · lundi 9 novembre 2026</div>
+    <h1>Text-to-SQL vérifié : interroger une base en français, sans risque</h1>
+    <p>Où l'on part de zéro : ce qu'est une base de données relationnelle, pourquoi un LLM qui écrit du SQL est utile et dangereux, comment votre code va lire, vérifier et exécuter ses requêtes, et à quoi ressemblera l'application finale. Puis ce que vous devez faire d'ici au <b>23 novembre</b>, avec votre présentation de ce jour-là, et une idée de la séance qui suivra.</p>
+    <nav class="toc"><a href="#histoire"><b>1</b>Du concept au produit</a><a href="#marche"><b>2</b>La première marche</a><a href="#archi"><b>3</b>La séance du 23</a></nav>
+  </div>
+  <button class="tbtn" type="button" id="themeBtn" aria-label="Basculer clair / sombre">clair / sombre</button>
+</header>
+
+<h2 class="part" id="histoire"><span>1</span>Du concept au produit</h2>
+<p class="lead">Dix-sept étapes, en sept chapitres. Avancez avec <span class="kbd">→</span> ou le bouton « suivant ». Les requêtes « écrites par le LLM » sont des exemples ; toutes les lignes, sommes et messages d'erreur sortent de la vraie base Chinook.</p>
+
+<div class="player" id="player" tabindex="0" aria-label="Animation pas à pas">
+  <div class="chapters" id="chap"></div>
+  <div class="scene" id="scene" aria-live="polite"></div>
+  <div class="cap" id="cap"></div>
+  <div class="ctrl"><button type="button" id="prev">← précédent</button><button type="button" class="primary" id="next">suivant →</button><button type="button" id="replay">rejouer</button><button type="button" id="fs">plein écran</button><span class="hint"><span class="kbd">←</span> <span class="kbd">→</span> pour naviguer</span><span class="count" id="count"></span></div>
+</div>
+
+<h2 class="part" id="marche"><span>2</span>La première marche, pour le 23 novembre</h2>
+<p class="lead">Pas toute l'application : la fondation. Une grammaire écrite, un lexer et un parser pour un petit sous-ensemble de SQL, et une exécution en lecture seule sur Chinook. Pas encore de LLM. Comptez <b>environ 3 heures par personne</b>.</p>
+<div class="card" style="border-left:5px solid var(--blue);margin:0 0 1.4rem">
+  <h3>Le 23 novembre : votre présentation</h3>
+  <p>Une courte présentation, environ 5 minutes. Le support est libre : des slides (écrites ou générées), une page, une démo en direct.</p>
+  <ol style="margin:.2rem 0 .4rem;padding-left:1.2rem">
+    <li><b>Ce que vous avez compris</b>, avec vos mots : le problème du text-to-SQL, la chaîne de la partie 1, ce que font un lexer, un parser, un arbre syntaxique.</li>
+    <li><b>Ce que vous avez implémenté</b>, avec une démo : les commandes de l'encadré ci-dessous, et vos tests.</li>
+    <li><b>Ce qui a coincé</b>, et vos questions.</li>
+  </ol>
+  <p style="margin:.2rem 0 0">Ensuite, l'encadrant choisit qui explique quel fichier : chacun doit pouvoir défendre le code de toute l'équipe, y compris celui écrit par un agent.</p>
+</div>
+<h3 style="margin:1.2rem 0 .3rem">Les données : la base Chinook</h3>
+<div class="grid2">
+  <div class="card"><h3>Où la trouver, à quoi elle ressemble</h3>
+    <p><b>Où</b> : dans le dépôt <a href="https://github.com/lerocha/chinook-database" target="_blank" rel="noopener">lerocha/chinook-database</a>, rubrique <i>Releases</i>, le fichier <code>Chinook_Sqlite.sqlite</code> (environ 1 Mo). C'est un seul fichier SQLite : rien à installer, Python sait le lire avec <code>sqlite3</code>. Mettez-le dans <code>data/</code>.</p>
+    <p><b>À quoi elle ressemble</b> : un magasin de musique en ligne, 11 tables.</p>
+<div class="term" style="white-space:pre-wrap">Album (347)          → Artist (275)
+Track (3 503)        → Album, Genre (25), MediaType (5)
+InvoiceLine (2 240)  → Track, Invoice (412)
+Invoice              → Customer (59)
+Customer             → Employee (8)
+PlaylistTrack (8 715) → Track, Playlist (18)
+Employee.ReportsTo   → Employee</div>
+    <p class="ill">Entre parenthèses, le nombre de lignes. Une flèche va de la table qui contient la clé étrangère vers la table qu'elle désigne : <code>Album.ArtistId</code> désigne une ligne de <code>Artist</code>.</p></div>
+  <div class="card"><h3>Comment l'utiliser</h3>
+    <p><b>À la main d'abord</b> : <code>sqlite3 data/Chinook_Sqlite.sqlite</code>, puis <code>.tables</code> (liste des tables) et <code>.schema Invoice</code> (colonnes et clés). Écrivez 5 requêtes vous-mêmes avant d'écrire le parser.</p>
+    <p><b>Depuis Python</b>, toujours en lecture seule (<code>mode=ro</code>) :</p>
+<pre class="code"><span class="k">import</span> sqlite3
+
+<span class="k">def</span> describe_chinook(path: str) -&gt; tuple[list[str], list[str]]:
+    connection = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    tables = [row[0] <span class="k">for</span> row <span class="k">in</span> connection.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table'")]
+    columns = [row[1] <span class="k">for</span> row <span class="k">in</span> connection.execute(
+        "PRAGMA table_info(Invoice)")]
+    <span class="k">return</span> tables, columns</pre>
+    <p class="ill">Exécuté : 11 tables ; colonnes d'Invoice : InvoiceId, CustomerId, InvoiceDate, BillingAddress, BillingCity, BillingState, BillingCountry, BillingPostalCode, Total.</p>
+    <p>Ce même schéma servira plus tard deux fois : votre vérificateur l'utilisera pour savoir si une table ou une colonne existe, et le prompt du LLM le contiendra.</p></div>
+</div>
+<div class="grid2" style="margin-top:1.2rem">
+  <div>
+    <h3 style="margin:.2rem 0">Ce que doit faire votre programme</h3>
+<div class="term"><span class="p">$</span> uv run t2s parse "SELECT FirstName, LastName FROM Customer LIMIT 5"
+Select(columns=['FirstName', 'LastName'], table='Customer', where=None, limit=5)
+<span class="p">$</span> uv run t2s parse "SELECT FROM Customer"
+ParseError: token 1: expected a column or table name, got 'FROM'
+<span class="p">$</span> uv run t2s run "SELECT FirstName FROM Customer WHERE Country = 'France' LIMIT 3"
+<span class="g">Camille
+Dominique
+Marc</span>
+<span class="p">$</span> uv run t2s run "DELETE FROM Customer"
+refused: token 0: expected SELECT, got 'DELETE'</div>
+    <p class="ill">Exemple de sortie ; les noms de commandes sont libres. Les trois prénoms sont les vrais premiers clients français de Chinook.</p>
+  </div>
+  <div>
+    <h3 style="margin:.2rem 0">Le sous-ensemble de la première marche</h3>
+<div class="term" style="white-space:pre-wrap">select    = "SELECT" columns "FROM" name [ where ] [ limit ] ;
+columns   = name { "," name } ;
+where     = "WHERE" name operator value ;
+operator  = "=" | "&lt;" | "&gt;" | "&lt;=" | "&gt;=" | "&lt;&gt;" ;
+value     = number | string ;
+limit     = "LIMIT" number ;</div>
+    <p class="ill">Mais dans DESIGN.md, écrivez la grammaire de <b>tout</b> le sous-ensemble visé (JOIN, GROUP BY, HAVING, ORDER BY), même si vous n'en codez qu'une partie.</p>
+  </div>
+</div>
+<h3 style="margin:1.6rem 0 .5rem">Quatre briques, une par personne (à trois, A et B vont ensemble)</h3>
+<div class="grid4">
+  <div class="card"><h3><span class="badge">A</span>La grammaire</h3><p>Dans DESIGN.md, la grammaire EBNF du sous-ensemble complet visé, avec des exemples de requêtes acceptées et refusées.</p><div class="done"><b>C'est fait quand</b> chacun de l'équipe sait dire si une requête donnée est dans la grammaire.</div></div>
+  <div class="card"><h3><span class="badge">B</span>Le lexer</h3><p>Découper une requête en jetons typés (mot-clé, nom, nombre, chaîne, ponctuation), avec leur position.</p><div class="done"><b>C'est fait quand</b> des tests couvrent les chaînes entre apostrophes, les nombres et les opérateurs à deux caractères (<code>&lt;=</code>, <code>&lt;&gt;</code>).</div></div>
+  <div class="card"><h3><span class="badge">C</span>Le parser et l'AST</h3><p>Une fonction par règle (descente récursive), des dataclasses pour l'arbre, une erreur qui donne la position du jeton fautif.</p><div class="done"><b>C'est fait quand</b> 15 requêtes valides sont parsées et 5 invalides rejetées avec un message précis.</div></div>
+  <div class="card"><h3><span class="badge">D</span>Exécution en lecture seule</h3><p>Ouvrir Chinook avec <code>sqlite3.connect("file:chinook.sqlite?mode=ro", uri=True)</code>, n'exécuter que ce que le parser accepte, afficher le résultat.</p><div class="done"><b>C'est fait quand</b> un test prouve qu'un <code>DELETE</code> échoue, même envoyé directement à la connexion.</div></div>
+</div>
+
+<h3 style="margin:2rem 0 .3rem">Comment s'y prendre, brique par brique</h3>
+<p class="lead" style="margin-bottom:.6rem">Une méthode pour démarrer, et des ressources pour aller plus loin. Elles sont en anglais pour la plupart ; un LLM peut vous aider à les lire.</p>
+<div class="note say"><b>Avec un LLM</b>Servez-vous-en pour comprendre : faites-vous expliquer un exemple pas à pas, demandez pourquoi une règle de grammaire boucle, faites relire vos tests. Si un agent écrit du code, relisez-le jusqu'à pouvoir l'expliquer sans lui : le 23, c'est vous qui le défendez.</div>
+<div class="grid2">
+  <div class="card"><h3><span class="badge">A</span>Construire la grammaire</h3>
+    <ol style="margin:.2rem 0 .5rem;padding-left:1.2rem;font-size:.95rem">
+      <li><b>Partir d'exemples.</b> Écrivez 15 à 20 questions réalistes sur Chinook, avec la requête SQL attendue. Relevez les constructions utilisées : c'est votre sous-ensemble, pas plus.</li>
+      <li><b>Découper dans la grammaire officielle.</b> SQLite publie la syntaxe de <code>SELECT</code> en diagrammes. Recopiez en EBNF seulement ce qui sert.</li>
+      <li><b>Écrire de haut en bas</b> : <code>select</code>, puis une règle par clause, puis les expressions. Une règle par niveau de priorité, du moins prioritaire au plus prioritaire : <code>or_expr</code>, <code>and_expr</code>, <code>not_expr</code>, <code>comparison</code>. Ainsi, <code>a OR b AND c</code> se lit <code>a OR (b AND c)</code>.</li>
+      <li><b>Éviter la récursion à gauche</b> : <code>expr = expr "AND" expr</code> fait boucler un parser sans fin. On écrit <code>and_expr = comparison { "AND" comparison }</code>. Et à chaque choix, le prochain jeton doit suffire à décider.</li>
+      <li><b>Vérifier sur papier</b> : déroulez la grammaire à la main sur chaque exemple, puis sur 5 requêtes qui doivent être refusées.</li>
+    </ol>
+    <div class="done"><b>Pour aller plus loin</b> : <a href="https://www.sqlite.org/lang_select.html" target="_blank" rel="noopener">syntaxe de SELECT (SQLite)</a> · <a href="https://www.sqlite.org/lang_expr.html" target="_blank" rel="noopener">syntaxe des expressions (SQLite)</a> · <a href="https://fr.wikipedia.org/wiki/Extended_Backus-Naur_Form" target="_blank" rel="noopener">la notation EBNF (Wikipédia)</a> · <a href="https://craftinginterpreters.com/representing-code.html" target="_blank" rel="noopener">Crafting Interpreters, ch. 5 : les grammaires</a></div></div>
+  <div class="card"><h3><span class="badge">B</span>Écrire le lexer</h3>
+    <ol style="margin:.2rem 0 .5rem;padding-left:1.2rem;font-size:.95rem">
+      <li><b>Lister les types de jetons</b> : mots-clés, noms, nombres, chaînes, opérateurs à un et à deux caractères, ponctuation. Une phrase par type pour dire à quoi il ressemble.</li>
+      <li><b>Une boucle sur les caractères</b> : regarder le caractère courant, choisir le type, consommer le jeton entier, noter sa position. Un mot est un mot-clé s'il est dans la liste (sans tenir compte de la casse), sinon c'est un nom.</li>
+      <li><b>Les cas pièges</b> : une apostrophe dans une chaîne s'écrit <code>''</code> en SQL (<code>'l''été'</code>) ; après <code>&lt;</code>, regarder si vient <code>=</code> ou <code>&gt;</code> ; un caractère inconnu donne une erreur avec sa position.</li>
+      <li><b>Tester avec un tableau</b> : des couples (texte, jetons attendus), parcourus par un seul test paramétré.</li>
+    </ol>
+    <div class="done"><b>Pour aller plus loin</b> : <a href="https://craftinginterpreters.com/scanning.html" target="_blank" rel="noopener">Crafting Interpreters, ch. 4 : Scanning</a> · <a href="https://ruslanspivak.com/lsbasi-part1/" target="_blank" rel="noopener">Let's Build A Simple Interpreter, en Python (parties 1 à 3)</a> · <a href="https://docs.pytest.org/en/stable/how-to/parametrize.html" target="_blank" rel="noopener">pytest : tests paramétrés</a></div></div>
+  <div class="card"><h3><span class="badge">C</span>Écrire le parser et l'arbre</h3>
+    <ol style="margin:.2rem 0 .5rem;padding-left:1.2rem;font-size:.95rem">
+      <li><b>Concevoir l'arbre d'abord.</b> Une dataclass par construction : <code>Select</code>, <code>Column</code>, <code>Literal</code>, <code>BinaryOp</code>… Les expressions forment un seul type : <code>Expr = Column | Literal | BinaryOp</code>. Dessinez l'arbre de 3 de vos exemples avant d'écrire du code.</li>
+      <li><b>Une méthode par règle</b>, avec trois outils : <code>peek()</code> (le jeton courant), <code>match()</code> (le consomme s'il convient), <code>expect()</code> (le consomme ou lève une erreur avec la position). <code>{ … }</code> devient une boucle <code>while</code>, <code>[ … ]</code> un <code>if</code>.</li>
+      <li><b>Tester en comparant des arbres</b> : <code>parse("…") == Select(...)</code>. Les dataclasses se comparent champ par champ.</li>
+      <li><b>Le test aller-retour</b>, le plus puissant : une fonction qui réécrit l'arbre en SQL, et la vérification <code>parse(to_sql(arbre)) == arbre</code>. <code>sqlglot</code> peut servir de juge dans les tests (même verdict, accepté ou refusé), jamais dans votre code.</li>
+    </ol>
+    <div class="done"><b>Pour aller plus loin</b> : <a href="https://craftinginterpreters.com/parsing-expressions.html" target="_blank" rel="noopener">Crafting Interpreters, ch. 6 : Parsing Expressions</a> · <a href="https://ruslanspivak.com/lsbasi-part7/" target="_blank" rel="noopener">Let's Build A Simple Interpreter, partie 7 : l'AST</a> · <a href="https://docs.python.org/3/library/dataclasses.html" target="_blank" rel="noopener">Python : dataclasses</a> · <a href="https://docs.python.org/3/library/ast.html" target="_blank" rel="noopener">Python : le module ast, un vrai AST</a> · <a href="https://hypothesis.readthedocs.io/" target="_blank" rel="noopener">Hypothesis</a> · <a href="https://github.com/tobymao/sqlglot" target="_blank" rel="noopener">sqlglot</a></div></div>
+  <div class="card"><h3><span class="badge">D</span>Exécuter sans risque</h3>
+    <ol style="margin:.2rem 0 .5rem;padding-left:1.2rem;font-size:.95rem">
+      <li><b>Récupérer la base</b> : le fichier SQLite de Chinook, dans le dépôt GitHub lerocha/chinook-database. Ouvrez-le une fois avec l'outil <code>sqlite3</code> pour regarder les tables.</li>
+      <li><b>Ouvrir en lecture seule</b> avec une adresse de fichier (URI) : <code>file:chinook.sqlite?mode=ro</code> et <code>uri=True</code>. Ajoutez <code>PRAGMA query_only = ON</code>.</li>
+      <li><b>N'exécuter que ce que le parser a accepté</b> : la commande <code>run</code> appelle le parser d'abord, et s'arrête à la moindre erreur.</li>
+      <li><b>Tester chaque barrière seule</b> : un test qui envoie un <code>DELETE</code> au parser, un autre qui l'envoie directement à la connexion.</li>
+    </ol>
+    <div class="done"><b>Pour aller plus loin</b> : <a href="https://github.com/lerocha/chinook-database" target="_blank" rel="noopener">Chinook</a> · <a href="https://docs.python.org/3/library/sqlite3.html" target="_blank" rel="noopener">Python : sqlite3</a> · <a href="https://www.sqlite.org/uri.html" target="_blank" rel="noopener">SQLite : les adresses URI et mode=ro</a></div></div>
+</div>
+
+<div class="grid2" style="margin-top:1.2rem">
+  <div class="card"><h3>Avant d'écrire du code, ensemble</h3>
+    <ul class="check">
+      <li><span><code>DESIGN.md</code> : ce que fait cette première marche, ce qu'elle ne fait pas, comment on vérifie qu'elle marche, qui fait quoi, et la grammaire.</span></li>
+      <li><span><code>AGENTS.md</code> (ou <code>CLAUDE.md</code>) : les consignes à votre agent de code. Rappel du sujet : aucun parser SQL existant dans le cœur, <code>sqlglot</code> seulement dans les tests.</span></li>
+      <li><span>Dépôt GitHub partagé avec votre encadrant ; une CI qui lance les tests.</span></li>
+    </ul></div>
+  <div class="card"><h3>Pas demandé maintenant</h3>
+    <ul class="no"><li>JOIN</li><li>GROUP BY, HAVING</li><li>vérificateur</li><li>LLM</li><li>explication</li><li>banc</li><li>serveur web</li></ul></div>
+</div>
+
+<h2 class="part" id="archi"><span>3</span>Et ensuite : la séance du 23 novembre</h2>
+<p class="lead">Le 23 novembre, la séance porte sur l'architecture : comment découper ce système en morceaux de code, qui dépend de qui, comment tester chaque morceau sans les autres. On y réfléchira ensemble, en séance : rien à préparer de ce côté. Voici seulement le schéma global de ce qu'on va construire, pour vous situer.</p>
+<div class="player" id="archPlayer" aria-label="Schéma global">
+  <div class="scene" style="min-height:20rem"><svg class="dg arch" id="archSvg" viewBox="0 0 900 360" role="img" aria-label="schéma fonctionnel du text-to-SQL"></svg></div>
+  <div class="cap" id="archCap"></div>
+</div>
+<div class="note say"><b>Trois mots qu'on utilisera le 23</b>Un <b>composant</b> est un morceau du programme (un module, une classe) qui a <b>une responsabilité</b> : une seule chose qu'il sait faire. Une <b>dépendance</b>, c'est quand un composant a besoin d'un autre pour fonctionner.</div>
+<p style="margin:.6rem 0 .2rem"><b>Pour vous donner une idée des questions du 23</b> (pas à préparer) :</p>
+<ul>
+  <li>Comment découper ce schéma en modules Python ?</li>
+  <li>Comment tester le parser sans appeler le LLM ni ouvrir la base ?</li>
+  <li>Où placer la boucle de réparation, et comment la tester sans modèle ?</li>
+</ul>
+
+<footer>Sujet « Text-to-SQL vérifié » (S. Chadli, octobre 2026). Base Chinook v1.4.5 (lerocha/chinook-database) : lignes, sommes et messages d'erreur réels, obtenus avec SQLite 3.53 et Python 3.13. Requêtes « écrites par le LLM » et chiffres du banc : exemples pour l'explication.</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function fr(x,d){return x.toFixed(d).replace(".",",").replace("-","−");}
+var RM=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var timers=[];
+function later(ms,fn){if(RM){fn();return;}timers.push(setTimeout(fn,ms));}
+function clearT(){timers.forEach(clearTimeout);timers=[];}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function type(el,text,speed,done){if(!el)return;if(RM){el.textContent=text;if(done)done();return;}var i=0;(function tick(){el.textContent=text.slice(0,i);if(i++<text.length)timers.push(setTimeout(tick,speed));else if(done)done();})();}
+function reveal(el,start,gap){var items=el.querySelectorAll(".rv");[].forEach.call(items,function(it,i){var d=it.getAttribute("data-d");later(d!==null?parseInt(d,10):start+i*gap,function(){it.classList.add("on");});});}
+function linechart(series,opt){
+  var W=opt.W||640,H=opt.H||220,L=opt.L||46,R=14,T=12,B=26,xs=opt.xmax,x0=opt.xmin||0,ymin=opt.ymin,ymax=opt.ymax;
+  function X(x){return L+(W-L-R)*(x-x0)/(xs-x0);}function Y(y){return T+(H-T-B)*(1-(y-ymin)/(ymax-ymin));}
+  var s='<svg class="dg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(opt.label||"graphique")+'">';
+  (opt.yt||[]).forEach(function(v){s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v[0]).toFixed(1)+'" y2="'+Y(v[0]).toFixed(1)+'" stroke="var(--rule)"/><text class="tk" x="'+(L-5)+'" y="'+(Y(v[0])+4).toFixed(1)+'" text-anchor="end">'+v[1]+'</text>';});
+  (opt.xt||[]).forEach(function(v){s+='<text class="tk" x="'+X(v[0]).toFixed(1)+'" y="'+(H-8)+'" text-anchor="'+(v[2]||"middle")+'">'+v[1]+'</text>';});
+  (opt.bands||[]).forEach(function(b){s+='<rect x="'+X(b[0]).toFixed(1)+'" y="'+T+'" width="'+(X(b[1])-X(b[0])).toFixed(1)+'" height="'+(H-T-B)+'" fill="'+b[2]+'"/>';});
+  s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+(H-B)+'" y2="'+(H-B)+'" stroke="var(--ink2)"/>';
+  series.forEach(function(se){var d="";se.pts.forEach(function(p,i){d+=(i?"L":"M")+X(p[0]).toFixed(1)+" "+Y(p[1]).toFixed(1);});s+='<path d="'+d+'" fill="none" stroke="'+se.c+'" stroke-width="'+(se.w||2.2)+'"'+(se.dash?' stroke-dasharray="'+se.dash+'"':'')+'/>';});
+  (opt.dots||[]).forEach(function(m){s+='<circle cx="'+X(m[0]).toFixed(1)+'" cy="'+Y(m[1]).toFixed(1)+'" r="'+(m[3]||4)+'" fill="'+m[2]+'"/>'+(m[4]?'<text x="'+(X(m[0])+7).toFixed(1)+'" y="'+(Y(m[1])-6).toFixed(1)+'">'+m[4]+'</text>':'');});
+  return s+'</svg>';
+}
+function legend(items){return '<div style="display:flex;flex-wrap:wrap;gap:.2rem 1.1rem;font-size:.78rem;color:var(--ink2);justify-content:center">'+items.map(function(it){return '<span><span style="display:inline-block;width:1.5em;border-top:2.5px '+(it.dash?"dashed":"solid")+' '+it.c+';vertical-align:.25em;margin-right:.35em"></span>'+it.t+'</span>';}).join("")+'</div>';}
+
+function appMock(el,brand,url,screens,note){
+  el.innerHTML='<div class="app rv"><div class="bar"><i></i><i></i><i></i><span class="url"></span></div><div class="abody"><nav aria-label="écrans de la maquette"></nav><main></main></div></div><p class="ill rv" style="text-align:center">'+note+'</p>';
+  var nav=el.querySelector("nav"),main=el.querySelector("main"),u=el.querySelector(".url");
+  function show(k){nav.innerHTML='<span class="brand">'+brand+'</span>'+screens.map(function(s,i){return '<button type="button" class="'+(i===k?"on":"")+'" data-k="'+i+'">'+s.n+'</button>';}).join("");
+    [].forEach.call(nav.querySelectorAll("button"),function(b){b.addEventListener("click",function(){show(parseInt(b.getAttribute("data-k"),10));});});
+    u.textContent=url+(screens[k].p||"");main.innerHTML=screens[k].h;main.classList.remove("fade");void main.offsetWidth;main.classList.add("fade");}
+  show(0);reveal(el,150,350);}
+function uin(l,v){return '<label class="uin"><small>'+l+'</small><span>'+v+'</span></label>';}
+function utab(h,rows,num){num=num||[];return '<div class="tw"><table><tr>'+h.map(function(x,i){return '<th'+(num.indexOf(i)>=0?' class="n"':'')+'>'+x+'</th>';}).join("")+'</tr>'+rows.map(function(r){return '<tr>'+r.map(function(x,i){return '<td'+(num.indexOf(i)>=0?' class="n"':'')+'>'+x+'</td>';}).join("")+'</tr>';}).join("")+'</table></div>';}
+function ukpi(items){return '<div class="kpi">'+items.map(function(k){return '<div><small>'+k[0]+'</small><b'+(k[2]?' style="color:var(--'+k[2]+')"':'')+'>'+k[1]+'</b></div>';}).join("")+'</div>';}
+function upbar(p,c){return '<div class="pbar"><i class="'+(c||"")+'" style="width:'+Math.max(0,Math.min(100,p))+'%"></i></div>';}
+
+var CH=["1 · La base","2 · Le problème","3 · Du texte à l'arbre","4 · Vérifier","5 · Exécuter sans risque","6 · Mesurer","7 · Le produit"];
+function sqlc(s){return s.replace(/\b(SELECT|FROM|JOIN|ON|WHERE|GROUP BY|HAVING|ORDER BY|LIMIT|DELETE|NOT IN|AS|DESC)\b/g,'<span class="k">$1</span>');}
+var Q_BAD="SELECT c.FirstName, SUM(i.Total)\nFROM Customer c\nJOIN Invoice i ON c.CustomerId = i.CustomerId\nGROUP BY c.FirstName\nHAVING SUM(i.Total) > 40";
+var Q_OK="SELECT c.FirstName, c.LastName, SUM(i.Total)\nFROM Customer c\nJOIN Invoice i ON c.CustomerId = i.CustomerId\nGROUP BY c.CustomerId, c.FirstName, c.LastName\nHAVING SUM(i.Total) > 40";
+var Q_V1="SELECT c.FirstName, SUM(i.Total)\nFROM Customer c\nJOIN Invoice i ON c.CustomerId = i.CustomerId\nWHERE SUM(i.Total) > 40";
+function resTable(rows,cols,mark){return '<table class="t" style="max-width:30rem"><tr>'+cols.map(function(c){return '<th>'+c+'</th>';}).join("")+'</tr>'+rows.map(function(r){var m=mark?mark(r):"";return '<tr'+(m?' style="background:var(--'+m+'bg);color:var(--'+m+');font-weight:700"':'')+'>'+r.map(function(x,i){return '<td'+(typeof x==="number"?' class="n"':'')+'>'+(typeof x==="number"?fr(x,2):esc(x))+'</td>';}).join("")+'</tr>';}).join("")+'</table>';}
+var S=[
+/* 1 */ {ch:0,t:"Une base de données : des tables reliées",
+ c:'<p>Une <b>base de données relationnelle</b> range les informations dans des <b>tables</b> : des lignes et des colonnes, comme un tableur. Vous travaillerez sur <b>Chinook</b>, un magasin de musique en ligne fictif : 11 tables (clients, factures, morceaux, artistes…), 59 clients, 412 factures.</p><div class="def"><b>Clé étrangère</b> : une colonne qui désigne une ligne d’une autre table. <code>Invoice.CustomerId</code> dit à quel client appartient chaque facture. C’est ce qui permet de relier les tables (vu en séance 2).</div>',
+ r:function(el){el.innerHTML='<div class="row" style="align-items:flex-start"><div class="bx soft rv"><span class="lbl">table Customer (extrait réel)</span>'+resTable([["1","Luís","Gonçalves"],["2","Leonie","Köhler"],["3","François","Tremblay"],["4","Bjørn","Hansen"]],["CustomerId","FirstName","LastName"])+'</div><span class="arr rv" style="align-self:center">⟵</span><div class="bx soft rv"><span class="lbl">table Invoice (extrait réel)</span>'+resTable([["1","2","2009-01-01",1.98],["2","4","2009-01-02",3.96],["3","8","2009-01-03",5.94],["4","14","2009-01-06",8.91]],["InvoiceId","CustomerId","InvoiceDate","Total"])+'</div></div><p class="ill rv" style="text-align:center">La flèche : chaque facture désigne son client par CustomerId.</p>';reveal(el,200,700);}},
+/* 2 */ {ch:0,t:"Une question, une requête SQL, un résultat",
+ c:'<p><b>SQL</b> est le langage pour interroger une base. Pour répondre à « quels clients ont dépensé plus de 40 € au total ? », il faut relier clients et factures, additionner les factures de chaque client, et garder ceux qui dépassent 40.</p><p>Écrire cette requête demande de connaître SQL et la structure de la base. Le projet : laisser l’utilisateur poser la question en français, et la faire traduire en SQL. C’est le <b>text-to-SQL</b>.</p>',
+ r:function(el){el.innerHTML='<div class="row" style="align-items:center"><div class="bx soft rv" style="max-width:15rem"><span class="lbl">question</span>Quels clients ont dépensé plus de 40 € au total ?</div><span class="arr rv">→</span><div class="bx rv"><span class="lbl">requête SQL</span><div class="code">'+sqlc(esc(Q_OK))+'</div></div><span class="arr rv">→</span><div class="bx soft rv"><span class="lbl">résultat : 14 lignes</span>'+resTable([["Helena","Holý",49.62],["Richard","Cunningham",47.62],["Luis","Rojas",46.62]],["FirstName","LastName","total"])+'<div class="ill">… 11 autres</div></div></div>';reveal(el,200,650);}},
+/* 3 */ {ch:1,t:"Un LLM traduit… presque bien",
+ c:'<p>Un LLM sait écrire du SQL. Ici, il produit une requête qui s’exécute sans erreur et renvoie 15 lignes à l’allure parfaitement normale.</p><p>Rien ne signale de problème. Et pourtant le résultat est faux. Saurez-vous voir pourquoi avant l’étape suivante ?</p>',
+ r:function(el){el.innerHTML='<div class="row" style="align-items:center"><div class="bx model rv"><span class="lbl">LLM</span><b>qwen2.5-coder:7b</b></div><span class="arr rv">→</span><div class="bx rv"><span class="lbl">requête proposée (exemple)</span><div class="code">'+sqlc(esc(Q_BAD))+'</div></div><span class="arr rv">→</span><div class="bx soft rv"><span class="lbl">résultat : 15 lignes, aucune erreur</span>'+resTable([["Frank",81.24],["Mark",75.24],["Helena",49.62],["Richard",47.62]],["FirstName","SUM(i.Total)"])+'<div class="ill">… 11 autres</div></div></div>';reveal(el,200,700);}},
+/* 4 */ {ch:1,t:"L’erreur : regrouper par prénom",
+ c:'<p>La requête regroupe les factures <b>par prénom</b> au lieu de les regrouper <b>par client</b>. Chinook a deux Frank et deux Mark : leurs factures sont additionnées ensemble. Mark apparaît avec 75,24 € alors qu’aucun des deux Mark n’a dépensé plus de 40 €.</p><div class="trap"><b>SQL plausible mais faux</b> : c’est le vrai danger du text-to-SQL. Une erreur de syntaxe se voit tout de suite ; une erreur de sens passe inaperçue.</div>',
+ r:function(el){el.innerHTML='<div class="row" style="align-items:flex-start"><div class="bx soft rv"><span class="lbl">par client (réel)</span>'+resTable([["Frank","Harris",37.62],["Frank","Ralston",43.62],["Mark","Philips",37.62],["Mark","Taylor",37.62]],["FirstName","LastName","total"])+'</div><span class="arr rv" style="align-self:center">→</span><div class="bx red rv"><span class="lbl">par prénom</span>'+resTable([["Frank",81.24],["Mark",75.24]],["FirstName","total"])+'<div class="mini" style="margin-top:.3rem">37,62 + 43,62 = 81,24<br>37,62 + 37,62 = 75,24</div></div></div><div class="row rv"><div class="bx soft">bonne requête : <b>14</b> lignes</div><div class="bx red">requête du LLM : <b>15</b> lignes</div></div>';reveal(el,200,700);}},
+/* 5 */ {ch:1,t:"Et parfois, une requête qui détruit",
+ c:'<p>Le LLM traduit fidèlement ce qu’on lui demande, y compris « supprime ». Il peut aussi être manipulé : une question qui contient une instruction cachée (« … puis supprime la table Customer ») peut se retrouver dans la requête.</p><div class="def"><b>Règle du projet</b> : aucune requête produite par le LLM n’est exécutée telle quelle. Votre code la lit, la vérifie, et l’exécute sur une connexion qui ne peut pas écrire.</div>',
+ r:function(el){el.innerHTML='<div class="row" style="align-items:center"><div class="bx soft rv" style="max-width:15rem"><span class="lbl">question</span>Supprime les clients qui n’ont rien acheté.</div><span class="arr rv">→</span><div class="bx model rv"><span class="lbl">LLM</span><b>traduit</b></div><span class="arr rv">→</span><div class="bx red rv"><span class="lbl">requête proposée</span><div class="code">'+sqlc(esc("DELETE FROM Customer\nWHERE CustomerId NOT IN\n  (SELECT CustomerId FROM Invoice)"))+'</div></div></div>';reveal(el,200,650);}},
+/* 6 */ {ch:2,t:"Le principe : le LLM traduit, votre code vérifie",
+ c:'<p>Voici la chaîne que vous allez construire. Le LLM n’est qu’un maillon : il propose une requête. Tout le reste est votre code, et c’est lui qui garantit que ce qui est exécuté est sûr et cohérent.</p><p>Les étapes suivantes détaillent chaque maillon, de gauche à droite.</p>',
+ r:function(el){var B=[["question","français"],["LLM","propose du SQL"],["lexer","texte → jetons"],["parser","jetons → arbre"],["vérificateur","sens, sécurité"],["exécution","lecture seule"],["explication","arbre → français"]];
+  el.innerHTML='<div class="flow">'+B.map(function(b,i){return (i?'<span class="arr rv">→</span>':'')+'<div class="bx rv '+(i===1?"blue":i>1?"green":"soft")+'">'+b[0]+'<small>'+b[1]+'</small></div>';}).join("")+'</div><div class="row rv"><div class="bx red mini">si le vérificateur trouve une erreur : son message repart vers le LLM, 2 fois au plus</div></div><p class="ill rv" style="text-align:center">Bleu : le modèle. Vert : votre code.</p>';reveal(el,150,280);}},
+/* 7 */ {ch:2,t:"D’abord, une grammaire",
+ c:'<p>Vous n’acceptez pas tout SQL : seulement un sous-ensemble, décrit par une <b>grammaire</b>, c’est-à-dire des règles qui disent quelles suites de mots sont permises. Ce qui n’est pas dans la grammaire est refusé.</p><div class="def"><b>EBNF</b> : une notation pour écrire une grammaire. <code>{ … }</code> : répété 0 fois ou plus. <code>[ … ]</code> : optionnel. <code>"SELECT"</code> : le mot tel quel. Le nom à gauche du <code>=</code> est la règle ; elle se définit avec d’autres règles.</div>',
+ r:function(el){var g=['select  = "SELECT" columns "FROM" table { join } [ where ]','          [ group ] [ having ] [ order ] [ limit ] ;','columns = column { "," column } ;','join    = "JOIN" table "ON" column "=" column ;','where   = "WHERE" condition ;','limit   = "LIMIT" number ;'];
+  el.innerHTML='<div class="bx" style="max-width:44rem;align-self:center"><span class="lbl">grammaire (extrait)</span><div class="code">'+g.map(function(l){return '<span class="rv" style="display:block">'+esc(l)+'</span>';}).join("")+'</div></div><div class="row"><div class="bx green rv mini"><span class="ok">acceptée</span> SELECT FirstName FROM Customer LIMIT 5</div><div class="bx red rv mini"><span class="ko">refusée</span> DELETE FROM Customer</div><div class="bx red rv mini"><span class="ko">refusée</span> … WHERE x IN (SELECT …)</div></div>';reveal(el,150,350);}},
+/* 8 */ {ch:2,t:"Le lexer : découper en jetons",
+ c:'<p>Pour l’ordinateur, une requête est d’abord une suite de caractères. Le <b>lexer</b> la découpe en <b>jetons</b> : mots-clés, noms, ponctuation, nombres, chaînes. Les espaces et les retours à la ligne disparaissent.</p><p>Ici, les mots-clés sont en bleu. Le lexer ne sait pas encore si la requête a du sens : il découpe, c’est tout.</p>',
+ r:function(el){var src="SELECT FirstName, LastName FROM Customer WHERE Country = 'France' LIMIT 3";var toks=src.match(/'[^']*'|\w+|[^\s\w]/g);
+  el.innerHTML='<div class="bx soft" style="align-self:center"><span class="lbl">texte</span><span class="mono">'+esc(src)+'</span></div><div class="chips" style="justify-content:center">'+toks.map(function(t){return '<span class="rv'+(/^(SELECT|FROM|WHERE|LIMIT)$/.test(t)?" k":"")+'">'+esc(t)+'</span>';}).join("")+'</div><p class="ill rv" style="text-align:center">'+toks.length+' jetons.</p>';reveal(el,300,180);}},
+/* 9 */ {ch:2,t:"Le parser : ranger les jetons dans un arbre",
+ c:'<p>Le <b>parser</b> lit les jetons dans l’ordre et vérifie qu’ils suivent la grammaire. Il construit un <b>arbre syntaxique</b> (AST) : la structure de la requête, sans la ponctuation.</p><div class="def"><b>Descente récursive</b> : une fonction par règle de grammaire. La fonction <code>select</code> appelle <code>columns</code>, qui appelle <code>column</code>… exactement comme la règle <code>select</code> utilise la règle <code>columns</code>. Si un jeton inattendu arrive, le parser dit lequel et à quelle position.</div>',
+ r:function(el){var t=["Select","├─ columns: FirstName, LastName","├─ from:    Customer","├─ where:   Equals(Country, 'France')","└─ limit:   3"];
+  el.innerHTML='<div class="grid2" style="width:100%;align-items:center"><div class="bx"><span class="lbl">arbre (AST)</span><div class="tree">'+t.map(function(l){return '<span class="rv" style="display:block">'+esc(l)+'</span>';}).join("")+'</div></div><div class="col"><div class="bx green rv mini">SELECT FirstName, LastName FROM Customer … → <span class="ok">arbre construit</span></div><div class="bx red rv mini">SELECT FROM Customer → <span class="ko">ParseError: token 1: expected a column or table name, got &#39;FROM&#39;</span></div><p class="ill rv">Message produit par un vrai parser à descente récursive de 60 lignes.</p></div></div>';reveal(el,200,450);}},
+/* 10 */ {ch:3,t:"Vérifier le sens",
+ c:'<p>Une requête peut respecter la grammaire et rester fausse : colonne inexistante, jointure sans clé, condition sur une somme mal placée. Le <b>vérificateur</b> parcourt l’arbre et contrôle ces règles. Ici, la somme est dans <code>WHERE</code> alors qu’une condition sur un agrégat va dans <code>HAVING</code>, après <code>GROUP BY</code>.</p><div class="def"><b>Pattern Visitor</b> : une classe qui visite l’arbre, avec une méthode par type de nœud (<code>visit_Where</code>, <code>visit_Aggregate</code>…). Ajouter une règle = ajouter une méthode, sans toucher aux classes de l’arbre.</div>',
+ r:function(el){el.innerHTML='<div class="grid2" style="width:100%;align-items:flex-start"><div class="bx"><span class="lbl">requête du LLM</span><div class="code">'+sqlc(esc(Q_V1)).replace("SUM(i.Total) &gt; 40","<u>SUM(i.Total)</u> &gt; 40")+'</div></div><div class="col"><div class="rv mini"><span class="ok">✓</span> tables Customer et Invoice : existent</div><div class="rv mini"><span class="ok">✓</span> colonnes FirstName, Total, CustomerId : existent</div><div class="rv mini"><span class="ok">✓</span> jointure sur la clé étrangère Invoice.CustomerId</div><div class="rv mini"><span class="ko">✗</span> agrégat SUM dans WHERE</div><div class="bx red rv mini">Message pour le LLM : « Une condition sur un agrégat ne peut pas être dans WHERE. Regroupe par client avec GROUP BY et mets la condition dans HAVING. »</div><div class="bx soft rv mini">Ce que dirait SQLite seul : <span class="mono">misuse of aggregate: SUM()</span></div></div></div>';reveal(el,200,600);}},
+/* 11 */ {ch:3,t:"La boucle de réparation, deux essais au plus",
+ c:'<p>Le message du vérificateur repart vers le LLM, qui propose une nouvelle requête. On recommence <b>au plus deux fois</b>, puis on abandonne en le disant à l’utilisateur.</p><div class="def"><b>Boucle bornée</b> : sans limite, un LLM qui se trompe toujours ferait tourner le système sans fin. Cette borne se teste sans modèle : un faux LLM, écrit pour les tests, renvoie trois mauvaises requêtes d’affilée.</div>',
+ r:function(el){el.innerHTML='<div class="row" style="align-items:stretch"><div class="bx red rv mini" style="max-width:13rem"><span class="lbl">essai 1</span>WHERE SUM(…) &gt; 40<br><span class="ko">refusée</span></div><span class="arr rv" style="align-self:center">→</span><div class="bx soft rv mini" style="max-width:13rem"><span class="lbl">message au LLM</span>mets la condition dans HAVING</div><span class="arr rv" style="align-self:center">→</span><div class="bx green rv mini" style="max-width:13rem"><span class="lbl">essai 2</span>GROUP BY c.CustomerId, c.FirstName<br>HAVING SUM(…) &gt; 40<br><span class="ok">acceptée</span></div></div><div class="row rv"><div class="bx soft mini">essai 3 refusé aussi ? → <b>arrêt</b> : « je n’ai pas su traduire cette question »</div></div>';reveal(el,200,600);}},
+/* 12 */ {ch:4,t:"Exécuter en lecture seule : deux barrières",
+ c:'<p>Première barrière : la grammaire ne connaît que <code>SELECT</code>. Un <code>DELETE</code> est refusé par le parser. Deuxième barrière : même si une faille du parser le laissait passer, la connexion à la base est ouverte <b>en lecture seule</b> et refuse toute écriture.</p><div class="def"><b>Défense en profondeur</b> : plusieurs protections indépendantes, pour qu’une erreur dans l’une ne suffise pas. On teste chaque barrière seule.</div>',
+ r:function(el){el.innerHTML='<div class="col" style="align-items:center;width:100%"><div class="bx red rv" style="max-width:34rem"><span class="lbl">barrière 1 : le parser</span><span class="mono mini">ParseError: token 0: expected SELECT, got &#39;DELETE&#39;</span></div><div class="arr rv">↓ si elle avait une faille</div><div class="bx red rv" style="max-width:34rem"><span class="lbl">barrière 2 : la connexion en lecture seule</span><span class="mono mini">sqlite3.OperationalError: attempt to write a readonly database</span></div><p class="ill rv">Les deux messages sont réels, obtenus sur Chinook.</p></div>';reveal(el,200,700);}},
+/* 13 */ {ch:4,t:"Expliquer la requête, sans LLM",
+ c:'<p>L’utilisateur ne lit pas forcément le SQL. Le système lui dit en français ce que fait la requête, en parcourant l’arbre : c’est un deuxième Visitor.</p><div class="def"><b>Déterministe</b> : la même requête donne toujours la même phrase. L’explication ne peut donc pas « arranger » la requête : si celle-ci regroupe par prénom, l’explication le dit, et l’utilisateur voit l’erreur de l’étape 4.</div>',
+ r:function(el){el.innerHTML='<div class="grid2" style="width:100%"><div class="bx green rv"><span class="lbl">requête juste</span>« Pour chaque <b>client</b>, additionne le total de ses factures et garde les clients dont la somme dépasse 40. »</div><div class="bx red rv"><span class="lbl">requête de l’étape 3</span>« Pour chaque <b>prénom</b>, additionne le total des factures des clients qui portent ce prénom et garde les prénoms dont la somme dépasse 40. »</div></div>';reveal(el,300,900);}},
+/* 14 */ {ch:5,t:"Mesurer : un banc de questions dont on connaît la réponse",
+ c:'<p>Combien de questions le système résout-il ? Pour le mesurer, il faut des questions dont on connaît la bonne réponse. Vous les fabriquez à l’envers : on part d’une requête SQL tirée d’un gabarit, on l’exécute pour obtenir le résultat de référence, puis on l’écrit en français.</p><div class="def"><b>Banc</b> : au moins 200 questions ainsi générées. La bonne réponse est connue <b>par construction</b>, sans rien annoter à la main.</div>',
+ r:function(el){el.innerHTML='<div class="flow"><div class="bx soft rv"><small>gabarit</small>clients de [pays] ayant dépensé plus de [N]</div><span class="arr rv">→</span><div class="bx rv"><small>requête</small>… Country = &#39;France&#39; … &gt; 40</div><span class="arr rv">→</span><div class="bx green rv"><small>exécution</small>résultat de référence</div><span class="arr rv">→</span><div class="bx soft rv"><small>verbalisation</small>« Quels clients français ont dépensé plus de 40 € ? »</div></div><div class="row rv"><div class="bx soft mini">× 200 questions → le banc</div></div>';reveal(el,200,450);}},
+/* 15 */ {ch:5,t:"Comparer des résultats, pas des requêtes",
+ c:'<p>Deux requêtes écrites différemment peuvent être justes toutes les deux. On compare donc leurs <b>résultats</b>, comme des <b>multiensembles</b> de lignes : l’ordre ne compte pas, mais une ligne présente deux fois compte deux fois.</p><div class="def"><b>Exactitude par exécution</b> : la part des questions du banc où le résultat obtenu est le même multiensemble que la référence. Exception : si la question impose un ordre (« les 5 plus gros clients »), on compare des listes.</div>',
+ r:function(el){el.innerHTML='<div class="grid2" style="width:100%"><div class="bx green rv mini"><span class="lbl">FROM Invoice i JOIN Customer c</span>tables dans l\u2019autre ordre, mêmes 14 lignes → <span class="ok">juste</span></div><div class="bx red rv mini"><span class="lbl">GROUP BY c.FirstName</span>en trop : (Frank, 81,24) et (Mark, 75,24) ; manquant : (Frank, 43,62) → <span class="ko">faux</span></div></div><div class="row rv"><div class="bx soft">exactitude = questions justes / questions du banc</div></div>';reveal(el,200,800);}},
+/* 16 */ {ch:6,t:"Le produit final",
+ c:'<p>Chaque zone de l’application finale correspond à un chapitre. La première marche n’en construit qu’une petite partie, sans écran : la grammaire et le parser (chapitre 3) pour un petit sous-ensemble, et l’exécution en lecture seule (chapitre 5).</p><p>La suite : les jointures et regroupements, le vérificateur et la boucle (4), le LLM, l’explication, le banc (6), puis le serveur web et la page.</p>',
+ r:function(el){var Z=[["w6","1","Question",'Quels clients ont dépensé plus de 40 € au total ?'],["","3","Requête et problèmes",'<span class="mono">… GROUP BY c.CustomerId, … HAVING …</span> · réparation 1 / 2'],["","4","Vérification",'noms ✓ · jointure sur clé ✓ · agrégats ✓ · LIMIT 100 ajouté'],["","4","Explication",'Pour chaque client, additionne…'],["","5","Résultat, lecture seule",'14 lignes · Helena Holý 49,62 · …'],["w6","6","Banc",'212 questions · exactitude 0,71 sans réparation, 0,79 avec · demandes malveillantes bloquées : 40 / 40']];
+  el.innerHTML='<div class="final">'+Z.map(function(z){return '<div class="bx rv '+z[0]+'"><div class="t"><span class="badge">'+z[1]+'</span>'+z[2]+'</div>'+z[3]+'</div>';}).join("")+'</div><p class="ill rv" style="text-align:center">Maquette. Banc : chiffres d’exemple. Les numéros renvoient aux chapitres.</p>';reveal(el,150,450);}},
+/* 17 */ {ch:6,t:"À quoi ressemblera l’application",
+ c:'<p>Une maquette de l’interface finale, pour vous donner une idée du produit. Cliquez sur les onglets à gauche : poser une question, voir une demande refusée, consulter le banc.</p><p>Elle n’est pas à reproduire telle quelle : la disposition est libre. Mais chaque écran correspond à une fonction que votre code devra fournir à la page, par une API.</p>',
+ r:function(el){appMock(el,"Chinook SQL","localhost:8000/",[
+  {n:"Question",p:"ask",h:'<div class="row2"><span class="uin" style="flex:1"><small>votre question</small><span>Quels clients ont dépensé plus de 40 € au total ?</span></span><span class="ubtn">Demander</span></div><div class="row2"><span class="tag ok">lexer ✓</span><span class="tag ok">parser ✓</span><span class="tag ok">vérificateur ✓</span><span class="tag bl">1 réparation</span><span class="tag ok">lecture seule</span></div><pre>SELECT c.FirstName, c.LastName, SUM(i.Total) AS total\nFROM Customer c JOIN Invoice i ON i.CustomerId = c.CustomerId\nGROUP BY c.CustomerId, c.FirstName, c.LastName\nHAVING SUM(i.Total) &gt; 40 ORDER BY total DESC LIMIT 100</pre><div class="box"><b>Explication</b> : pour chaque client, additionne le total de ses factures, garde ceux qui dépassent 40, du plus grand au plus petit.</div>'+utab(["prénom","nom","total"],[["Helena","Holý","49,62"],["Richard","Cunningham","47,62"],["Luis","Rojas","46,62"],["…","14 lignes",""]],[2])},
+  {n:"Refus",p:"ask",h:'<div class="row2"><span class="uin" style="flex:1"><small>votre question</small><span>Supprime tous les clients</span></span><span class="ubtn">Demander</span></div><div class="row2"><span class="tag ok">lexer ✓</span><span class="tag ko">parser ✗</span></div><pre>DELETE FROM Customer</pre><div class="banner"><b>Refusée.</b> token 0: expected SELECT, got &#39;DELETE&#39;. Ce service ne fait que lire la base. Aucune requête n’a été envoyée à la base.</div>'},
+  {n:"Banc",p:"bench",h:'<h4>Banc de questions</h4>'+ukpi([["questions","212"],["exactitude, sans réparation","0,71"],["avec réparation","0,79","green"],["malveillantes bloquées","40 / 40","green"]])+utab(["difficulté","questions","exact"],[["une table","64","0,92"],["jointure","81","0,78"],["GROUP BY, HAVING","67","0,66"]],[1,2])}
+ ],"Maquette. Requête, explication et lignes : vraie base Chinook ; banc et réparation : chiffres d’exemple.");}}
+];
+var STAGES=["question","LLM","lexer","parser","vérificateur","exécution","explication"];
+function track(on,note){return '<div class="track7">'+STAGES.map(function(n,i){return (i?'<span class="ta">→</span>':'')+'<span class="ts'+(on.indexOf(i)>=0?' on':'')+'">'+n+'</span>';}).join("")+(note?'<span class="note7">'+note+'</span>':'')+'</div>';}
+var WHAT={
+ 6:['La grammaire, en une phrase','le contrat du parser : la liste des formes de requête qu’il accepte. Tout le reste sera refusé.'],
+ 7:['Le lexer, en une phrase','le premier maillon de votre code : il transforme le texte de la requête en une liste de jetons.'],
+ 8:['Le parser, en une phrase','le deuxième maillon : il vérifie que les jetons suivent la grammaire et les range dans un arbre.'],
+ 9:['Le vérificateur, en une phrase','le troisième maillon : il parcourt l’arbre et refuse ce qui n’a pas de sens ou n’est pas sûr, avec un message que le LLM peut suivre.'],
+ 10:['La boucle de réparation, en une phrase','le lien retour entre le vérificateur et le LLM : elle renvoie le message d’erreur et redemande une requête, deux fois au plus.'],
+ 11:['L’exécution, en une phrase','le maillon qui envoie à la base la requête acceptée, sur une connexion qui ne peut pas écrire, et récupère les lignes.'],
+ 12:['L’explication, en une phrase','le dernier maillon : il transforme l’arbre en une phrase en français, sans LLM.'],
+ 13:['Le banc, en une phrase','un jeu de questions dont on connaît la réponse, qu’on fait passer dans toute la chaîne pour mesurer combien elle en réussit.'],
+ 14:['Le banc, en une phrase','un jeu de questions dont on connaît la réponse, qu’on fait passer dans toute la chaîne pour mesurer combien elle en réussit.']};
+var ON={6:[3],7:[2],8:[3],9:[4],10:[1,4],11:[5],12:[6],13:[0,1,2,3,4,5,6],14:[0,1,2,3,4,5,6]};
+Object.keys(ON).forEach(function(k){var s=S[k],r=s.r;s.c='<div class="what"><b>'+WHAT[k][0]+'</b> : '+WHAT[k][1]+'</div>'+s.c;
+ s.r=function(el){r(el);el.insertAdjacentHTML("afterbegin",track(ON[k],k>=13?"le banc fait passer chaque question dans toute la chaîne":k==6?"la grammaire décrit ce que le parser accepte":""));var tr=el.querySelector(".track7");el.style.paddingTop=(tr.offsetHeight+28)+"px";};});
+var NODES={
+ q:{x:20,y:40,w:130,h:50,t:"Question",s:"en français",k:""},
+ llm:{x:175,y:40,w:130,h:50,t:"LLM",s:"propose du SQL",k:"ext"},
+ lex:{x:330,y:40,w:130,h:50,t:"Lexer",s:"texte → jetons",k:"core"},
+ par:{x:485,y:40,w:130,h:50,t:"Parser",s:"jetons → arbre",k:"core"},
+ chk:{x:640,y:40,w:140,h:50,t:"Vérificateur",s:"sens, sécurité",k:"core"},
+ exe:{x:640,y:175,w:140,h:50,t:"Exécution",s:"lecture seule",k:"core"},
+ db:{x:800,y:175,w:90,h:50,t:"Chinook",s:"base",k:"ext"},
+ exp:{x:485,y:175,w:130,h:50,t:"Explication",s:"arbre → français",k:"core"},
+ res:{x:560,y:285,w:150,h:50,t:"Réponse",s:"lignes + phrase",k:""},
+ bench:{x:20,y:175,w:200,h:46,t:"Banc de questions",s:"plus tard",k:"later"},
+ api:{x:250,y:290,w:180,h:46,t:"API web et page",s:"plus tard",k:"later"}
+};
+var AS=[
+ {t:"Ce que vous allez construire, vu de haut",c:'<p>Le schéma <b>fonctionnel</b> du système : ce qu’il fait, étape par étape. En vert, votre code ; en bleu, ce qui vient de l’extérieur (le modèle, la base) ; en pointillés, ce qui viendra plus tard. La flèche rouge est la boucle de réparation.</p><p>Ce schéma ne dit pas encore comment organiser le code : c’est justement le travail de la séance du 23.</p>',
+  d:function(){return nodes()+edge("q","llm")+edge("llm","lex")+edge("lex","par")+edge("par","chk")+edge("chk","exe")+edge("exe","db")+edge("chk","exp")+edge("exp","res")+edge("exe","res")+edge("bench","q")+edge("api","q")+'<path d="M710 40 C710 2 240 2 240 40" fill="none" stroke="var(--red)" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ahr)"/><text x="475" y="31" text-anchor="middle" style="fill:var(--red);font-size:12px">erreur : le message repart vers le LLM, 2 fois au plus</text>';}}
+];
+
+/* ---------- moteur de l'animation ---------- */
+var cur=0,seen={};
+function render(){
+  clearT();
+  var st=S[cur];seen[cur]=1;
+  $("chap").innerHTML=CH.map(function(c,i){var first=S.findIndex(function(s){return s.ch===i;});var done=S.some(function(s,k){return s.ch===i&&seen[k];});return '<button type="button" data-f="'+first+'" class="'+(i===st.ch?"on":done?"done":"")+'">'+c+'</button>';}).join("");
+  [].slice.call($("chap").querySelectorAll("button")).forEach(function(b){b.addEventListener("click",function(){cur=parseInt(b.getAttribute("data-f"),10);render();});});
+  var sc=$("scene");sc.innerHTML="";sc.removeAttribute("style");st.r(sc);
+  $("cap").innerHTML='<h3>'+(cur+1)+'. '+st.t+'</h3>'+st.c;
+  $("count").textContent="étape "+(cur+1)+" / "+S.length;
+  $("prev").disabled=cur===0;$("next").disabled=cur===S.length-1;
+}
+function go(k){cur=Math.max(0,Math.min(S.length-1,k));render();}
+$("prev").addEventListener("click",function(){go(cur-1);});
+$("next").addEventListener("click",function(){go(cur+1);});
+$("replay").addEventListener("click",function(){render();});
+$("fs").addEventListener("click",function(){var p=$("player");try{if(document.fullscreenElement)document.exitFullscreen();else if(p.requestFullscreen)p.requestFullscreen().catch(function(){});}catch(e){}});
+$("player").addEventListener("keydown",function(e){if(e.target.closest&&e.target.closest("input"))return;if(e.key==="ArrowRight"){e.preventDefault();go(cur+1);}else if(e.key==="ArrowLeft"){e.preventDefault();go(cur-1);}});
+render();
+
+/* ---------- architecture ---------- */
+function node(id){var n=NODES[id];return '<g><rect class="node '+n.k+'" x="'+n.x+'" y="'+n.y+'" width="'+n.w+'" height="'+n.h+'" rx="4"/><text x="'+(n.x+n.w/2)+'" y="'+(n.y+n.h/2-2)+'" text-anchor="middle">'+n.t+'</text><text class="s" x="'+(n.x+n.w/2)+'" y="'+(n.y+n.h/2+13)+'" text-anchor="middle">'+n.s+'</text></g>';}
+function nodes(list){return (list||Object.keys(NODES)).map(node).join("");}
+function edge(a,b,cls){var A=NODES[a],B=NODES[b],ax=A.x+A.w/2,ay=A.y+A.h/2,bx=B.x+B.w/2,by=B.y+B.h/2;
+ function clip(N,x0,y0,x1,y1){var dx=x1-x0,dy=y1-y0,tx=dx?(N.w/2)/Math.abs(dx):1e9,ty=dy?(N.h/2)/Math.abs(dy):1e9,t=Math.min(tx,ty);return [x0+dx*t,y0+dy*t];}
+ var p=clip(A,ax,ay,bx,by),q=clip(B,bx,by,ax,ay),red=cls==="red"||cls==="q";
+ return '<line class="ed '+(cls||"")+'" x1="'+p[0].toFixed(1)+'" y1="'+p[1].toFixed(1)+'" x2="'+q[0].toFixed(1)+'" y2="'+q[1].toFixed(1)+'" marker-end="url(#ah'+(red?"r":"")+')"/>'+(cls==="q"?'<text class="q" x="'+((p[0]+q[0])/2+6).toFixed(1)+'" y="'+((p[1]+q[1])/2-6).toFixed(1)+'">?</text>':'');}
+function zone(x,y,w,h,label){return '<rect class="zone" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="8"/>'+(label?'<text x="'+(x+10)+'" y="'+(y+h+18)+'" style="fill:var(--green);font-weight:700">'+label+'</text>':'');}
+function mono(x,y,w,h,label){return '<rect class="mono" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="6"/><text x="'+(x+14)+'" y="'+(y+22)+'" style="font-weight:700;fill:var(--red)">'+label+'</text>';}
+var DEFS='<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--ink2)"/></marker><marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--red)"/></marker></defs>';
+var ai=0;
+function arender(){if(!$("archSvg"))return;arender2();}
+function arender2(){var a=AS[ai];$("archSvg").innerHTML=DEFS+a.d();$("archSvg").classList.remove("fade");void $("archSvg").getBoundingClientRect();$("archSvg").classList.add("fade");$("archCap").innerHTML='<h3>'+a.t+'</h3>'+a.c;if($("acount")){$("acount").textContent=(ai+1)+" / "+AS.length;$("aprev").disabled=ai===0;$("anext").disabled=ai===AS.length-1;}}
+if($("aprev")){$("aprev").addEventListener("click",function(){if(ai>0){ai--;arender();}});
+$("anext").addEventListener("click",function(){if(ai<AS.length-1){ai++;arender();}});}
+if($("archPlayer"))$("archPlayer").addEventListener("keydown",function(e){if(e.key==="ArrowRight"&&ai<AS.length-1){e.preventDefault();ai++;arender();}else if(e.key==="ArrowLeft"&&ai>0){e.preventDefault();ai--;arender();}});
+arender();
+$("themeBtn").addEventListener("click",function(){var r=document.documentElement;r.setAttribute("data-theme",r.getAttribute("data-theme")==="dark"?"light":"dark");});
+})();
+</script>
+
+</body>
+</html>
