@@ -1,5 +1,5 @@
 
-PONCTUATION = {',', '(', ')', ';', '.'}
+PONCTUATION = {',', '(', ')', ';', '.','*'}
 OPERATORS = {'=', '<', '>', '<=', '>=', '<>'}
 
 KEYWORDS = {
@@ -195,3 +195,6 @@ def tokenize(input_str: str) -> list:
 
     tokens.append(('EOF', '', line, column))
     return tokens
+
+
+
