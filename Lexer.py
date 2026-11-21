@@ -1,33 +1,197 @@
-PONCTUATION = {',', '(', ')', ';'}
+
+PONCTUATION = {',', '(', ')', ';', '.'}
+OPERATORS = {'=', '<', '>', '<=', '>=', '<>'}
+
+KEYWORDS = {
+    'SELECT', 'FROM', 'AS',
+    'INNER', 'JOIN', 'ON',
+    'WHERE', 'AND', 'IS', 'NOT', 'NULL',
+    'GROUP', 'BY', 'HAVING',
+    'ORDER', 'ASC', 'DESC',
+    'LIMIT', 'COUNT', 'SUM'
+}
 
 def tokenize(input_str: str) -> list:
     """
-    Tokenizes the input string into a list of tokens.
+    Tokenizes the input string into a list of typed tokens.
+    Each token contains its type, value, line and column.
     """
     tokens = []
     current_token = ''
-    
-    for char in input_str:
+    i = 0
+    line = 1
+    column = 1
 
-        if current_token + char == "\n":
-            current_token = ''
+    while i < len(input_str):
+        char = input_str[i]
 
-        elif char.isspace():
+        # Ignore whitespace
+        if char.isspace():
             if current_token:
-                tokens.append(current_token)
+                value = current_token
+                token_type = (
+                    'KEYWORD' if value.upper() in KEYWORDS
+                    else 'IDENTIFIER'
+                )
+                tokens.append((token_type, value, line, column - len(value)))
                 current_token = ''
-        else:
-            if char in PONCTUATION:
-                if current_token:
-                    tokens.append(current_token)
-                    current_token = ''
-                tokens.append(char)
-            else:
-                current_token += char
-    
-    if current_token:
-        tokens.append(current_token)
-    
-    return tokens
 
-print(tokenize("sElEcT u.id, u.email AS user_email, COUNT(o.id) total_orders \n FrOm users u \n LEFT JOIN orders o ON u.id = o.user_id AND o.status != 'CANCELLED' \n WHERE u.age >= 18 \n AND u.score <= 100.0 \n AND u.role <> 'ADMIN' \n AND u.tenant_id = '$1' \n AND u.region = :region_name \n AND u.deleted_at IS NULL \n GROUP BY u.id, u.email"))
+            if char == '\n':
+                line += 1
+                column = 1
+            else:
+                column += 1
+
+            i += 1
+            continue
+
+        # Handle strings
+        if char == "'":
+            if current_token:
+                value = current_token
+                token_type = (
+                    'KEYWORD' if value.upper() in KEYWORDS
+                    else 'IDENTIFIER'
+                )
+                tokens.append((token_type, value, line, column - len(value)))
+                current_token = ''
+
+            start_line = line
+            start_column = column
+            string_value = ''
+            i += 1
+            column += 1
+
+            while i < len(input_str):
+                char = input_str[i]
+
+                if char == "'":
+                    # Escaped quote: ''
+                    if i + 1 < len(input_str) and input_str[i + 1] == "'":
+                        string_value += "'"
+                        i += 2
+                        column += 2
+                    else:
+                        i += 1
+                        column += 1
+                        break
+                else:
+                    string_value += char
+                    if char == '\n':
+                        line += 1
+                        column = 1
+                    else:
+                        column += 1
+                    i += 1
+            else:
+                raise ValueError(
+                    f"Unterminated string at line {start_line}, "
+                    f"column {start_column}"
+                )
+
+            tokens.append(('STRING', string_value, start_line, start_column))
+            continue
+
+        # Handle punctuation
+        if char in PONCTUATION:
+            if current_token:
+                value = current_token
+                token_type = (
+                    'KEYWORD' if value.upper() in KEYWORDS
+                    else 'IDENTIFIER'
+                )
+                tokens.append((token_type, value, line, column - len(value)))
+                current_token = ''
+
+            tokens.append(('PUNCTUATION', char, line, column))
+            i += 1
+            column += 1
+            continue
+
+        # Handle operators (longest operator first)
+        if char in {'=', '<', '>'}:
+            if current_token:
+                value = current_token
+                token_type = (
+                    'KEYWORD' if value.upper() in KEYWORDS
+                    else 'IDENTIFIER'
+                )
+                tokens.append((token_type, value, line, column - len(value)))
+                current_token = ''
+
+            operator = char
+
+            if i + 1 < len(input_str):      #Regarde si l'opérateur global est composé de deux opérateurs (ex <=)
+                pair = char + input_str[i + 1]
+                if pair in OPERATORS:               
+                    operator = pair
+
+            tokens.append(('OPERATOR', operator, line, column))
+            i += len(operator)
+            column += len(operator)
+            continue
+
+        # Handle numbers (including negative numbers)
+        if char.isdigit() or (
+            char == '-' and i + 1 < len(input_str)
+            and input_str[i + 1].isdigit()
+            and not current_token
+        ):
+            if current_token:
+                value = current_token
+                token_type = (
+                    'KEYWORD' if value.upper() in KEYWORDS
+                    else 'IDENTIFIER'
+                )
+                tokens.append((token_type, value, line, column - len(value)))
+                current_token = ''
+
+            start_column = column
+            number = char
+            i += 1
+            column += 1
+
+            while i < len(input_str) and input_str[i].isdigit():   #Regarde si c'est un nombre composé de plusieurs chiffre ou un négatif
+                number += input_str[i]
+                i += 1
+                column += 1
+
+            # Decimal part
+            if i < len(input_str) and input_str[i] == '.':     #Regarde si c'est un nb décimal
+                if i + 1 < len(input_str) and input_str[i + 1].isdigit():
+                    number += '.'
+                    i += 1
+                    column += 1
+
+                    while i < len(input_str) and input_str[i].isdigit():
+                        number += input_str[i]
+                        i += 1
+                        column += 1
+
+            tokens.append(('NUMBER', number, line, start_column))
+            continue
+
+        # Build the current token (identifier or keyword)
+        if char.isalnum() or char == '_':
+            current_token += char
+            i += 1
+            column += 1
+            continue
+
+        # Unknown character
+        raise ValueError(
+            f"Unexpected character {char!r} "
+            f"at line {line}, column {column}"
+        )
+
+    # Flush the final token
+    if current_token:
+        value = current_token
+        token_type = (
+            'KEYWORD' if value.upper() in KEYWORDS
+            else 'IDENTIFIER'
+        )
+        tokens.append((token_type, value, line, column - len(value)))
+
+    tokens.append(('EOF', '', line, column))
+    return tokens
