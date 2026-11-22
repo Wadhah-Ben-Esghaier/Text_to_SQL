@@ -1,22 +1,3 @@
-class ParserError(Exception):
-    def __init__(self, message: str, token: tuple):
-        token_type, value, line, column = token
-
-        if token_type == 'EOF':
-            found = "end of query"
-        else:
-            found = f"{value!r} ({token_type})"
-
-        self.line = line
-        self.column = column
-        self.token = token
-
-        super().__init__(
-            f"{message}. Found {found} "
-            f"at line {line}, column {column}."
-        )
-
-
 from Lexer import tokenize
 from sql_ast import (
     ColumnRef,
@@ -48,7 +29,7 @@ class ParserError(Exception):
         self.token = token
 
         super().__init__(
-            f"{message}. Found {found} "
+            f"{message.rstrip('.')}. Found {found} "
             f"at line {line}, column {column}."
         )
 
@@ -524,114 +505,3 @@ def parse_sql(input_str: str):
     parser = Parser(tokens)
 
     return parser.parse_query()
-
-
-
-
-
-from parser import parse_sql, ParserError
-
-
-valid_queries = [
-
-    # 1. Basic SELECT
-    "SELECT CustomerId FROM Customer",
-
-    # 2. Qualified columns and AS alias
-    "SELECT c.CustomerId, c.FirstName FROM Customer AS c",
-
-    # 3. Table alias without AS
-    "SELECT c.CustomerId FROM Customer c",
-
-    # 4. COUNT(*)
-    "SELECT COUNT(*) FROM Invoice",
-
-    # 5. COUNT(column) with alias
-    "SELECT COUNT(InvoiceId) AS total FROM Invoice",
-
-    # 6. SUM(column)
-    "SELECT SUM(Total) AS revenue FROM Invoice",
-
-    # 7. WHERE with integer
-    "SELECT CustomerId FROM Customer WHERE CustomerId = 42",
-
-    # 8. WHERE with negative decimal
-    "SELECT Total FROM Invoice WHERE Total >= -10.5",
-
-    # 9. String containing an escaped quote
-    "SELECT FirstName FROM Customer WHERE FirstName = 'O''Brien'",
-
-    # 10. IS NULL
-    "SELECT CustomerId FROM Customer WHERE Company IS NULL",
-
-    # 11. IS NOT NULL and AND
-    "SELECT CustomerId FROM Customer "
-    "WHERE Company IS NOT NULL AND Country <> 'France'",
-
-    # 12. INNER JOIN
-    "SELECT c.CustomerId, i.InvoiceId "
-    "FROM Customer c INNER JOIN Invoice i "
-    "ON c.CustomerId = i.CustomerId",
-
-    # 13. GROUP BY with multiple columns
-    "SELECT Country, City, COUNT(*) AS total "
-    "FROM Customer GROUP BY Country, City",
-
-    # 14. HAVING
-    "SELECT CustomerId FROM Customer "
-    "GROUP BY CustomerId HAVING COUNT(*) > 2",
-
-    # 15. ORDER BY and LIMIT
-    "SELECT FirstName FROM Customer "
-    "ORDER BY FirstName DESC, CustomerId ASC LIMIT 10;",
-
-    # 16. Self join
-    "SELECT e.EmployeeId FROM Employee e "
-    "INNER JOIN Employee boss "
-    "ON e.ReportsTo = boss.EmployeeId"
-]
-
-
-for i, query in enumerate(valid_queries, 1):
-    try:
-        ast = parse_sql(query)
-        print(f"[OK] Valid query {i} successfully parsed.")
-
-    except ParserError as error:
-        print(f"[ERROR] Valid query {i} was rejected:")
-        print(error)
-
-
-
-
-invalid_queries = [
-
-    # 1. Missing SELECT item
-    "SELECT FROM Customer",
-
-    # 2. Missing item after comma
-    "SELECT CustomerId, FROM Customer",
-
-    # 3. Missing ON in INNER JOIN
-    "SELECT c.CustomerId FROM Customer c "
-    "INNER JOIN Invoice i "
-    "WHERE c.CustomerId = i.CustomerId",
-
-    # 4. Missing value after comparison operator
-    "SELECT CustomerId FROM Customer "
-    "WHERE CustomerId =",
-
-    # 5. LIMIT must be an integer
-    "SELECT CustomerId FROM Customer LIMIT 2.5"
-]
-
-
-for i, query in enumerate(invalid_queries, 1):
-    try:
-        ast = parse_sql(query)
-
-        print(f"[ERROR] Invalid query {i} was accepted!")
-
-    except ParserError as error:
-        print(f"[OK] Invalid query {i} correctly rejected:")
-        print(error)

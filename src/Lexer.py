@@ -132,20 +132,10 @@ def tokenize(input_str: str) -> list:
             continue
 
         # Handle numbers (including negative numbers)
-        if char.isdigit() or (
-            char == '-' and i + 1 < len(input_str)
-            and input_str[i + 1].isdigit()
-            and not current_token
+        if not current_token and (
+            char.isdigit()
+            or (char == '-' and i + 1 < len(input_str) and input_str[i + 1].isdigit())
         ):
-            if current_token:
-                value = current_token
-                token_type = (
-                    'KEYWORD' if value.upper() in KEYWORDS
-                    else 'IDENTIFIER'
-                )
-                tokens.append((token_type, value, line, column - len(value)))
-                current_token = ''
-
             start_column = column
             number = char
             i += 1
