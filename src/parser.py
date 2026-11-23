@@ -145,7 +145,7 @@ class Parser:
     def parse_select_stmt(self):
         """
         select_stmt =
-            "SELECT", select_list,
+            "SELECT", [ "DISTINCT" ], select_list,
             "FROM", table_ref,
             [ inner_join ],
             [ where_clause ],
@@ -155,6 +155,7 @@ class Parser:
             [ limit_clause ] ;
         """
         self.expect_keyword('SELECT')
+        distinct = self.match_keyword('DISTINCT')
 
         select_items = self.parse_select_list()
 
@@ -168,7 +169,7 @@ class Parser:
         order_by = None
         limit = None
 
-        if self.check_keyword('INNER'):
+        if self.check_keyword('INNER') or self.check_keyword('JOIN'):
             join = self.parse_inner_join()
 
         if self.check_keyword('WHERE'):
@@ -194,7 +195,8 @@ class Parser:
             group_by=group_by,
             having=having,
             order_by=order_by,
-            limit=limit
+            limit=limit,
+            distinct=distinct
         )
 
     # ---------------------------------------------------------
@@ -218,7 +220,7 @@ class Parser:
             column_ref, [ "AS", identifier ]
             | aggregate_expr, [ "AS", identifier ] ;
         """
-        if self.check_keyword('COUNT') or self.check_keyword('SUM'):
+        if self.check_keyword('COUNT') or self.check_keyword('SUM') or self.check_keyword('AVG'):
             expression = self.parse_aggregate_expr()
         else:
             expression = self.parse_column_ref()
@@ -277,10 +279,10 @@ class Parser:
     def parse_inner_join(self):
         """
         inner_join =
-            "INNER", "JOIN", table_ref,
+            [ "INNER" ], "JOIN", table_ref,
             "ON", column_ref, "=", column_ref ;
         """
-        self.expect_keyword('INNER')
+        self.match_keyword('INNER')
         self.expect_keyword('JOIN')
 
         table = self.parse_table_ref()
@@ -390,13 +392,16 @@ class Parser:
         """
         aggregate_expr =
             "COUNT", "(", ( "*" | column_ref ), ")"
-            | "SUM", "(", column_ref, ")" ;
+            | ( "SUM" | "AVG" ), "(", column_ref, ")" ;
         """
         if self.match_keyword('COUNT'):
             function = 'COUNT'
 
         elif self.match_keyword('SUM'):
             function = 'SUM'
+
+        elif self.match_keyword('AVG'):
+            function = 'AVG'
 
         else:
             self.fail("An aggregate function was expected.")
@@ -438,7 +443,7 @@ class Parser:
         """
         order_item = order_expression, [ "ASC" | "DESC" ] ;
         """
-        if self.check_keyword('COUNT') or self.check_keyword('SUM'):
+        if self.check_keyword('COUNT') or self.check_keyword('SUM') or self.check_keyword('AVG'):
             expression = self.parse_aggregate_expr()
         else:
             expression = self.parse_column_ref()

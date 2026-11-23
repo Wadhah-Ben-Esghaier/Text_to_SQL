@@ -14,6 +14,7 @@ Projet TDLOG. À terme, l’application traduira une question en français en SQ
 | [`tests/cli_display.py`](tests/cli_display.py) | Met en forme l'AST et les résultats de la démonstration. |
 | [`data/Chinook_Sqlite.sqlite`](data/Chinook_Sqlite.sqlite) | Base d’exemple SQLite fournie avec le projet. |
 | [`tests/test_text_to_sql.py`](tests/test_text_to_sql.py) | Tests automatisés du lexer, du parser, de SQLite et de la ligne de commande. |
+| [`tests/test_grammar_extensions.py`](tests/test_grammar_extensions.py) | Les 12 requêtes de l'atelier et les tests de `JOIN`, `AVG` et `SELECT DISTINCT`. |
 | [Workflow GitHub Actions](.github/workflows/tests.yml) | Lance la suite de tests à chaque push et pull request. |
 | [`docs/tdlog-text-to-sql.html`](docs/tdlog-text-to-sql.html#marche) | Consigne du jalon et exemples de démonstration. |
 
@@ -60,13 +61,27 @@ L'option `--pretty` met en forme la sortie pour la démonstration. Les erreurs s
 python -m unittest discover -s tests -v
 ```
 
-Cette commande lance 17 tests, dont des cas paramétrés pour les 16 requêtes valides et les 5 invalides du parser. La suite vérifie aussi la forme d'un AST, les positions du lexer et les deux barrières contre `DELETE`. Le test SQLite envoie le `DELETE` directement à une connexion ouverte sur une copie temporaire de Chinook. GitHub Actions lance la même commande.
+Cette commande lance 27 tests, dont des cas paramétrés pour les 16 requêtes valides et les 5 invalides du parser initial, ainsi que les 12 références de l'atelier. La suite vérifie aussi la forme d'un AST, les positions du lexer et les deux barrières contre `DELETE`. Le test SQLite envoie le `DELETE` directement à une connexion ouverte sur une copie temporaire de Chinook. GitHub Actions lance la même commande.
 
 Pour la présentation, `python -m unittest discover -s tests -q` affiche uniquement le bilan quand les tests passent.
 
 ## Sous-ensemble SQL
 
-Le périmètre minimal du jalon couvre `SELECT … FROM …`, une comparaison facultative dans `WHERE` et une clause facultative `LIMIT`. Le parser accepte aussi une jointure `INNER JOIN`, les alias, `COUNT`, `SUM`, `AND`, `IS [NOT] NULL`, `GROUP BY`, `HAVING` et `ORDER BY`. L’analyse est syntaxique. SQLite se charge de résoudre les noms de tables et de colonnes lors de l’exécution.
+Le périmètre minimal du jalon couvre `SELECT … FROM …`, une comparaison facultative dans `WHERE` et une clause facultative `LIMIT`. Le parser accepte aussi une jointure `INNER JOIN` ou `JOIN`, les alias, `COUNT`, `SUM`, `AVG`, `SELECT DISTINCT`, `AND`, `IS [NOT] NULL`, `GROUP BY`, `HAVING` et `ORDER BY`. L’analyse est syntaxique. SQLite se charge de résoudre les noms de tables et de colonnes lors de l’exécution.
+
+## Partie A de l'atelier : élargir la grammaire
+
+- `JOIN` et `INNER JOIN` produisent le même `JoinClause`.
+- `AVG(colonne)` produit un `Aggregate`, comme `SUM`, dans `SELECT`, `HAVING` et `ORDER BY`.
+- `SELECT DISTINCT` active `SelectQuery.distinct` : les doublons sont retirés sur la ligne de résultat entière. `COUNT(DISTINCT colonne)` reste hors du sous-ensemble.
+
+Les 12 requêtes de référence sont acceptées et exécutées sur Chinook. Des tests supplémentaires couvrent `DISTINCT`, absent de ces 12 requêtes, et le refus des jointures non prises en charge, de `AVG(*)`, des sous-requêtes et des instructions multiples.
+
+```sh
+python tests/t2s.py parse "SELECT DISTINCT Country FROM Customer" --pretty
+python tests/t2s.py run "SELECT AVG(Milliseconds) AS moyenne FROM Track" --pretty
+python tests/t2s.py run "SELECT a.Title FROM Album a JOIN Artist ar ON a.ArtistId = ar.ArtistId WHERE ar.Name = 'AC/DC'" --pretty
+```
 
 ## Jalon du 23 novembre
 
@@ -75,5 +90,5 @@ Le périmètre minimal du jalon couvre `SELECT … FROM …`, une comparaison fa
 - [x] **Exécution et démo**. Les commandes `parse` et `run` couvrent les quatre cas de la consigne. `run` valide la requête et ouvre Chinook en lecture seule.
 - [x] **Tests automatisés et CI**. La suite passe localement. Le workflow est configuré pour la lancer sur GitHub.
 - [x] **Identifiants avec chiffres**. Le lexer accepte des identifiants comme `T1` en un seul jeton.
-- [ ] **Documentation**. Compléter `Design.md` avec les règles `aggregate_expr` et `string_char`, des exemples acceptés et refusés, le périmètre du jalon, les critères de validation et la répartition du travail. Remplir `AGENTS.md` avec les consignes de l’équipe, dont l’usage d’un parser maison et la limitation de `sqlglot` aux tests. Confirmer l’accès de l’encadrant au dépôt GitHub.
+- [ ] **Documentation**. Les règles `aggregate_expr` et `string_char`, les exemples et les critères de validation de A sont dans `Design.md`. Il reste à documenter l'architecture complète et la répartition du travail, à remplir `AGENTS.md` avec les consignes de l'équipe (parser maison, `sqlglot` réservé aux tests) et à confirmer l'accès de l'encadrant au dépôt GitHub.
 - [ ] **Présentation de cinq minutes**. Expliquer la chaîne du Text-to-SQL et le rôle du lexer, du parser et de l’AST. Faire la démo, montrer les tests et présenter les difficultés ou questions. Chaque membre doit pouvoir expliquer le code de l’équipe.

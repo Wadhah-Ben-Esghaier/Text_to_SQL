@@ -8,7 +8,7 @@ class ColumnRef:
     table: str | None = None
 
 
-# An aggregate expression: COUNT(*) or SUM(column), for example
+# An aggregate expression: COUNT(*), SUM(column) or AVG(column), for example
 @dataclass
 class Aggregate:
     function: str
@@ -79,3 +79,5 @@ class SelectQuery:
     having: HavingCondition | None = None
     order_by: list[OrderItem] | None = None
     limit: int | None = None
+    # DISTINCT removes duplicate result rows across all selected expressions.
+    distinct: bool = False

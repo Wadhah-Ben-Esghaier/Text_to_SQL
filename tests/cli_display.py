@@ -14,7 +14,8 @@ from sql_ast import (
 
 def format_ast(query: SelectQuery) -> str:
     clauses = (
-        ('SELECT', ', '.join(map(_format_node, query.select_items))),
+        ('SELECT', ('DISTINCT ' if query.distinct else '')
+         + ', '.join(map(_format_node, query.select_items))),
         ('FROM', query.from_table),
         ('INNER JOIN', query.join),
         ('WHERE', ' AND '.join(map(_format_node, query.where)) if query.where else None),

@@ -3,12 +3,14 @@ PONCTUATION = {',', '(', ')', ';', '.','*'}
 OPERATORS = {'=', '<', '>', '<=', '>=', '<>'}
 
 KEYWORDS = {
-    'SELECT', 'FROM', 'AS',
+    'SELECT', 'DISTINCT', 'FROM', 'AS',
     'INNER', 'JOIN', 'ON',
+    # Reserved to reject unsupported joins instead of treating them as aliases.
+    'LEFT', 'RIGHT', 'FULL', 'OUTER', 'CROSS', 'NATURAL',
     'WHERE', 'AND', 'IS', 'NOT', 'NULL',
     'GROUP', 'BY', 'HAVING',
     'ORDER', 'ASC', 'DESC',
-    'LIMIT', 'COUNT', 'SUM'
+    'LIMIT', 'COUNT', 'SUM', 'AVG'
 }
 
 def tokenize(input_str: str) -> list:
