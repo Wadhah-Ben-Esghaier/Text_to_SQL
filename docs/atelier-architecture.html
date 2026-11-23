@@ -1,0 +1,897 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atelier architecture · 15 · Text_to_SQL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,450;0,9..144,560;1,9..144,450&family=Jost:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<script>(function(){var q=/[?&]mode=(light|dark)/.exec(location.search),m=null;try{m=localStorage.getItem("doc-mode")}catch(e){}if(q)m=q[1];var d=document.documentElement;d.setAttribute("data-mode",m==="light"||m==="dark"?m:(d.getAttribute("data-mode")==="light"?"light":"dark"))})();</script>
+<script id="cc-theme-head">(function(){var d=document.documentElement,q=/[?&]mode=(light|dark)/.exec(location.search),p=null;try{p=localStorage.getItem("cc-mode")}catch(e){}if(p!=="dark"&&p!=="light"&&p!=="system")p=d.getAttribute("data-theme-default")||"system";if(q)p=q[1];d.setAttribute("data-theme",p);d.setAttribute("data-mode",p==="system"?(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):p);})();</script>
+<style>
+:root{--bg:#0B0912;--bg2:#171320;--ink:#F5EFE3;--ink2:#CFC5D8;--faint:#857D97;--line:rgba(241,234,221,.14);--line2:rgba(241,234,221,.30);
+--gold:#E1C48C;--pink:#EC4C8C;--green:#8CCB55;--teal:#6FC3B2;--violet:#C08BD6;--sky:#5F94D0;--coral:#F2681E;--amber:#E8A857;
+--paper:#191424;--serif:'ABChanel Corpo 2022','Fraunces',Georgia,serif;--sans:'ABChanel Corpo 2022','Jost','Avenir Next',Avenir,'Segoe UI',sans-serif;--mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+--stars:radial-gradient(1.4px 1.4px at 8% 18%,rgba(255,255,255,.85),transparent),radial-gradient(1.2px 1.2px at 22% 62%,rgba(255,255,255,.55),transparent),radial-gradient(1px 1px at 34% 30%,rgba(255,255,255,.65),transparent),radial-gradient(1.3px 1.3px at 47% 78%,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 58% 22%,rgba(255,255,255,.7),transparent),radial-gradient(1.5px 1.5px at 66% 54%,rgba(255,255,255,.6),transparent),radial-gradient(1px 1px at 74% 84%,rgba(255,255,255,.45),transparent),radial-gradient(1.2px 1.2px at 82% 38%,rgba(255,255,255,.7),transparent),radial-gradient(1px 1px at 90% 68%,rgba(255,255,255,.5),transparent),radial-gradient(1.4px 1.4px at 15% 88%,rgba(255,255,255,.55),transparent),radial-gradient(1px 1px at 40% 12%,rgba(255,255,255,.6),transparent),radial-gradient(1px 1px at 95% 14%,rgba(255,255,255,.55),transparent)}
+*{box-sizing:border-box}
+html{background:#050409}
+body{margin:0;font:300 16px/1.6 var(--sans);color:var(--ink);background:#050409;-webkit-font-smoothing:antialiased}
+:root{--pad:56px;--maxw:1120px}
+html,body{overflow-x:hidden}
+.page{padding:0}
+.hero,section,footer,.toc{--g:max(var(--pad),calc((100% - var(--maxw)) / 2));padding-left:var(--g)!important;padding-right:var(--g)!important}
+b,strong{font-weight:500;color:var(--ink)}
+/* hero */
+.hero{position:relative;isolation:isolate;overflow:hidden;margin:0;padding:56px 52px 52px;border-bottom:1px solid var(--line);
+ background:radial-gradient(70% 90% at 92% 0%,color-mix(in srgb,var(--gold) 26%,transparent),transparent 60%),var(--stars),radial-gradient(140% 120% at 50% 0%,#100B19,var(--bg) 60%)}
+.hero .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:56px}
+.wm{width:150px;color:var(--ink)}.wm svg{display:block;width:100%;height:auto}
+.cob{display:flex;align-items:center;gap:18px}.cob img{display:block}.cob .sep{width:1px;height:34px;background:var(--line2)}
+.kick{font:500 12px/1 var(--sans);letter-spacing:.32em;text-transform:uppercase;color:var(--gold);margin:0 0 14px}
+.hero h1{font:560 44px/1.1 var(--serif);margin:0 0 14px;max-width:18ch;letter-spacing:-.005em}
+.hero h1 em{font-style:italic;font-weight:450;color:var(--gold)}
+.hero .sub{font-size:18px;color:var(--ink2);max-width:54ch;margin:0 0 26px}
+.chips{max-width:640px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:400 12.5px/1 var(--mono);letter-spacing:.02em;color:var(--ink2);border:1px solid var(--line2);padding:7px 12px;border-radius:99px;background:rgba(11,9,18,.5)}
+.chip i{font-style:normal;color:var(--gold);margin-right:6px}
+.orb{position:absolute;border-radius:50%;z-index:-1;box-shadow:inset -14px -17px 47px rgba(0,0,0,.55)}
+.orb::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:inset 17px 16px 39px rgba(255,255,255,.14)}
+.o-amber{background:radial-gradient(circle at 34% 30%,#FBE0AE,#E8A857 46%,#7e551f 82%)}
+.o-violet{background:radial-gradient(circle at 34% 30%,#ECCBF6,#C08BD6 46%,#5b3670 82%)}
+.o-magenta{background:radial-gradient(circle at 34% 30%,#FBA8CE,#EC4C8C 46%,#7c1d45 82%)}
+.o-green{background:radial-gradient(circle at 34% 30%,#C8F09A,#8CCB55 42%,#3C6B24 78%,#1d3512)}
+.o-blue{background:radial-gradient(circle at 34% 30%,#BCDAF4,#5F94D0 46%,#23446e 82%)}
+.ring{position:absolute;left:50%;top:50%;width:190%;height:44%;transform:translate(-50%,-50%) rotate(-24deg);border:2px solid rgba(240,230,210,.5);border-radius:50%}
+
+/* ===== mode clair : ivoire couture ===== */
+html,body{transition:background-color .35s}
+.lt{display:none!important}
+:root[data-mode="light"]{--bg:#FFFCF7;--bg2:#F4EEE4;--ink:#15111C;--ink2:#3E3749;--faint:#7A7187;--line:rgba(21,17,28,.10);--line2:rgba(21,17,28,.20);
+--gold:#9C7633;--pink:#C2306D;--green:#4E8A25;--teal:#21806F;--violet:#8A4FA6;--sky:#2F64A3;--coral:#C9500F;--amber:#A86E1E;--paper:#FFFFFF;
+--stars:radial-gradient(1.4px 1.4px at 8% 18%,rgba(156,118,51,.55),transparent),radial-gradient(1.2px 1.2px at 22% 62%,rgba(21,17,28,.22),transparent),radial-gradient(1px 1px at 34% 30%,rgba(156,118,51,.45),transparent),radial-gradient(1.3px 1.3px at 47% 78%,rgba(21,17,28,.2),transparent),radial-gradient(1px 1px at 58% 22%,rgba(156,118,51,.5),transparent),radial-gradient(1.5px 1.5px at 66% 54%,rgba(21,17,28,.18),transparent),radial-gradient(1.2px 1.2px at 82% 38%,rgba(156,118,51,.45),transparent),radial-gradient(1px 1px at 95% 14%,rgba(21,17,28,.2),transparent);color-scheme:light}
+:root[data-mode="light"] .dk{display:none!important}
+:root[data-mode="light"] .lt{display:block!important}
+:root[data-mode="light"],:root[data-mode="light"] body{background:#EDE6DA}
+:root[data-mode="light"] .hero{background:radial-gradient(60% 85% at 92% 0%,rgba(232,168,87,.30),transparent 62%),radial-gradient(45% 70% at 0% 100%,rgba(192,139,214,.16),transparent 65%),var(--stars),linear-gradient(180deg,#FFFDF9,#F6EFE3)}
+:root[data-mode="light"] section{background:radial-gradient(60% 80% at 100% 0%,color-mix(in srgb,var(--ac) 11%,transparent),transparent 60%),var(--bg)}
+:root[data-mode="light"] .toc a{background:#FFFCF7}
+:root[data-mode="light"] .toc a:hover{background:#F4EEE4}
+:root[data-mode="light"] .chip{background:rgba(255,255,255,.75)}
+:root[data-mode="light"] .card{background:#FFFFFF;box-shadow:inset 3px 0 0 var(--c,var(--ac)),0 10px 24px -18px rgba(60,40,20,.35)}
+:root[data-mode="light"] .steps span{background:#FFFFFF}
+:root[data-mode="light"] .steps span::before{color:#FFFFFF}
+:root[data-mode="light"] .ideas span{background:#FFFFFF}
+:root[data-mode="light"] .todo li{box-shadow:0 10px 24px -20px rgba(60,40,20,.35)}
+:root[data-mode="light"] .quote{background:linear-gradient(90deg,rgba(225,196,140,.22),rgba(225,196,140,.06))}
+:root[data-mode="light"] .orb{box-shadow:inset -12px -15px 40px rgba(60,30,10,.28),0 24px 40px -18px rgba(90,50,20,.45)}
+:root[data-mode="light"] .orb::after{box-shadow:inset 17px 16px 39px rgba(255,255,255,.35)}
+:root[data-mode="light"] .ring{border-color:rgba(21,17,28,.28)}
+:root[data-mode="light"] footer{background:#FFFCF7}
+/* bascule */
+.mode{position:fixed;top:16px;right:16px;z-index:50;display:flex;gap:2px;padding:3px;border:1px solid var(--line2);border-radius:99px;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.mode button{all:unset;cursor:pointer;font:400 12.5px/1 var(--sans);letter-spacing:.04em;color:var(--faint);padding:7px 12px;border-radius:99px;transition:background .2s,color .2s}
+.mode button:hover{color:var(--ink)}
+.mode button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+/* sommaire */
+.toc{display:grid;grid-template-columns:repeat(5,1fr);gap:0;background:var(--bg);border-bottom:1px solid var(--line);margin:0}
+.toc a+a{border-left:1px solid var(--line)}
+.toc a{display:block;padding:16px 18px 18px;background:var(--bg);color:var(--ink2);text-decoration:none;font-size:13.5px;line-height:1.3;border-top:2px solid var(--ac)}
+.toc a:hover{background:var(--bg2);color:var(--ink)}
+.toc a span{display:block;font:italic 450 22px/1 var(--serif);color:var(--ac);margin-bottom:6px}
+/* sections */
+section{position:relative;margin:0;padding:56px 52px 60px;border-bottom:1px solid var(--line);background:radial-gradient(60% 80% at 100% 0%,color-mix(in srgb,var(--ac) 13%,transparent),transparent 60%),var(--bg)}
+.sh{display:flex;align-items:baseline;gap:22px;margin:0 0 22px}
+.sh .n{font:italic 450 64px/.9 var(--serif);color:transparent;-webkit-text-stroke:1.2px var(--ac)}
+.sh .k{font:500 11.5px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--ac);margin:0 0 8px}
+.sh h2{font:560 28px/1.15 var(--serif);margin:0}
+.lead{font-size:17.5px;color:var(--ink2);margin:0 0 22px;max-width:70ch}
+.grid2,.grid3,.grid4{display:grid;gap:14px}.grid2{grid-template-columns:repeat(2,1fr)}.grid3{grid-template-columns:repeat(3,1fr)}.grid4{grid-template-columns:repeat(4,1fr)}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)),var(--paper);border:1px solid var(--line2);box-shadow:inset 3px 0 0 var(--c,var(--ac));padding:16px 18px 16px 20px;font-size:15px;line-height:1.5;color:var(--ink2)}
+.card h3{font:500 15.5px/1.3 var(--sans);color:var(--ink);margin:0 0 6px}
+.card ul{margin:4px 0 0;padding-left:18px}.card li{margin:3px 0}.card li::marker{color:var(--c,var(--ac))}
+.card p{margin:0}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:0 0 22px}
+.kpi{background:var(--bg2);padding:16px 18px}
+.kpi b{display:block;font:560 30px/1 var(--serif);color:var(--ac);margin-bottom:6px}
+.kpi span{font-size:13.5px;color:var(--ink2);line-height:1.35;display:block}
+.steps{display:flex;flex-wrap:wrap;gap:8px;counter-reset:s;margin:6px 0 18px}
+.steps span{counter-increment:s;font-size:13.5px;border:1px solid var(--line2);padding:7px 12px 7px 10px;border-radius:99px;color:var(--ink2);background:rgba(255,255,255,.03)}
+.steps span::before{content:counter(s);font:500 11px/1 var(--mono);color:var(--bg);background:var(--ac);border-radius:99px;display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;margin-right:8px}
+.quote{border-left:3px solid var(--gold);background:var(--bg2);padding:18px 24px;font:italic 450 22px/1.4 var(--serif);color:var(--ink);margin:22px 0 0}
+.quote small{display:block;font:300 14px/1.4 var(--sans);font-style:normal;color:var(--faint);margin-top:8px}
+.trio .card{padding-top:14px}
+.trio .card h3{font:500 11.5px/1 var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--c);margin:0 0 12px}
+.rows{list-style:none;margin:0;padding:0}
+.rows li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);color:var(--ink)}
+.rows li:first-child{border-top:0}
+.rows li em{font:400 12px/1.6 var(--mono);font-style:normal;color:var(--faint);white-space:nowrap}
+.sub2{font:500 11.5px/1 var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--faint);margin:28px 0 12px}
+.debate{display:grid;grid-template-columns:repeat(2,1fr);gap:0 28px}
+.debate div{padding:12px 0;border-top:1px solid var(--line);font-size:15px;color:var(--ink2)}
+.debate div b{display:block;color:var(--ink);font-weight:500;margin-bottom:2px}
+.note{display:flex;gap:12px;align-items:flex-start;margin-top:18px;padding:12px 16px;border:1px dashed var(--line2);font-size:14.5px;color:var(--ink2)}
+.note .t{font:500 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--coral);border:1px solid var(--coral);padding:5px 8px;white-space:nowrap;margin-top:2px}
+.red .card h3{font:560 18px/1.25 var(--serif)}
+.red .card .num{font:italic 450 34px/1 var(--serif);color:var(--c);display:block;margin-bottom:8px}
+.ideas{display:flex;flex-wrap:wrap;gap:8px}
+.ideas span{font-size:14px;border:1px solid var(--line2);padding:7px 13px;border-radius:99px;color:var(--ink2)}
+.ideas span::before{content:"✦";color:var(--violet);margin-right:7px}
+.todo{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.todo li{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start;padding:14px 18px;background:var(--paper);border:1px solid var(--line2)}
+.todo li::before{content:"";width:18px;height:18px;border:1.5px solid var(--ac);margin-top:3px}
+.todo li b{display:block;font-weight:500}
+.todo li span{color:var(--ink2);font-size:14.5px}
+.cta{margin-top:22px;font-size:15.5px;color:var(--ink2)}
+.cta b{color:var(--gold)}
+footer{margin:0;padding:26px 52px;background:var(--bg);display:flex;justify-content:space-between;align-items:center;gap:20px;font-size:13px;color:var(--faint)}
+footer .pj{display:flex;gap:8px;flex-wrap:wrap}
+footer .pj span{border:1px solid var(--line2);padding:5px 10px;border-radius:99px;font:400 12px/1 var(--mono);color:var(--ink2)}
+/* responsive */
+body{overflow-wrap:break-word}
+.tblwrap,.grid2>*,.grid3>*,.grid4>*,.kpis>*,.debate>*{min-width:0}
+.hero h1{font-size:clamp(28px,5.4vw,44px)}
+.sh h2{font-size:clamp(21px,3.6vw,28px)}
+.sh .n{font-size:clamp(42px,8vw,64px)}
+.cob img{height:var(--h);width:auto}
+.kpi b{font-size:clamp(23px,3.2vw,30px);white-space:nowrap}
+@media (max-width:960px){
+ .grid4{grid-template-columns:repeat(2,1fr)}
+ :root{--pad:36px}
+ .hero .sub{max-width:calc(100% - 130px)}
+ .mode{top:auto;bottom:14px;right:14px;box-shadow:0 8px 24px -8px rgba(0,0,0,.35)}
+}
+@media (max-width:760px){
+ .grid3{grid-template-columns:1fr}
+ .kpis{grid-template-columns:repeat(2,1fr)}
+ .toc{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+ .toc::-webkit-scrollbar{display:none}
+ .toc a{flex:0 0 150px;scroll-snap-align:start}
+ .hero .sub{font-size:16.5px;max-width:none}
+ .chips{max-width:none}
+ .orb.o-violet{display:none}
+}
+@media (max-width:640px){
+ :root{--pad:20px}
+ .hero{padding-top:30px;padding-bottom:30px}
+ .hero .top{flex-wrap:wrap;gap:16px;margin-bottom:34px}
+ .wm{width:116px}
+ .cob{gap:12px}.cob img.lt,.cob img.dk{--s:.78;height:calc(var(--h) * var(--s))}
+ .hero .kick{font-size:10.5px;letter-spacing:.24em}
+ .orb.o-amber{width:80px!important;height:80px!important;right:-40px!important;top:60px!important}
+ .note{flex-direction:column;gap:8px}
+ .hero>span:not(.orb){width:76px!important;height:76px!important;right:14px!important;bottom:-40px!important}
+ .chip{font-size:11.5px;padding:6px 10px}
+ section{padding:28px 20px 30px}
+ .sh{gap:14px;margin-bottom:16px}
+ .lead{font-size:16px}
+ .grid2,.grid4,.debate{grid-template-columns:1fr}
+ .debate{gap:0}
+ .kpi{padding:14px}.kpi b{font-size:25px}.kpi span{font-size:12.5px}
+ .quote{font-size:18px;padding:14px 16px}
+ .todo li{padding:12px 14px;gap:10px;grid-template-columns:22px 1fr}
+ .ideas span,.steps span{font-size:13px}
+ footer{flex-direction:column;align-items:flex-start;padding:20px}
+ .mode button{padding:8px 11px}
+}
+@media (max-width:380px){
+ .hero h1{font-size:26px}
+ .kpis{grid-template-columns:1fr}
+ .toc a{flex-basis:132px}
+}
+/* texte long, code et tableaux (cours, notes) */
+.prose{max-width:72ch}
+.prose p{color:var(--ink2);margin:0 0 14px}
+.prose h3{font:560 21px/1.25 var(--serif);color:var(--ink);margin:30px 0 10px}
+.prose ul,.prose ol{color:var(--ink2);padding-left:20px;margin:0 0 14px}.prose li{margin:4px 0}.prose li::marker{color:var(--ac)}
+code{font:400 .88em/1.4 var(--mono);background:var(--bg2);border:1px solid var(--line);padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre.code{margin:18px 0 0;padding:16px 20px;background:var(--bg2);border:1px solid var(--line2);box-shadow:inset 3px 0 0 var(--ac);font:400 13.5px/1.65 var(--mono);color:var(--ink);overflow-x:auto;white-space:pre;tab-size:4}
+pre.code .cm{color:var(--faint)}pre.code .kw{color:var(--violet)}pre.code .st{color:var(--green)}pre.code .nu{color:var(--amber)}
+.tblwrap{overflow-x:auto;margin:18px 0 0;border:1px solid var(--line2);background:var(--paper)}
+.tbl{width:100%;border-collapse:collapse;font-size:14.5px}
+.tbl th{font:500 11px/1.2 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--ac);text-align:left;padding:12px 14px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.tbl td{padding:11px 14px;border-top:1px solid var(--line);color:var(--ink2);vertical-align:top}
+.tbl td:first-child{color:var(--ink)}
+.tbl tr:first-child td{border-top:0}
+:root[data-mode="light"] pre.code{background:#FFFFFF}
+@media print{.mode{display:none}html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}section,.hero{break-inside:avoid-page}.toc{display:none}}
+
+.org{font:500 12px/1 var(--sans);letter-spacing:.32em;text-transform:uppercase;color:var(--ink2)}
+.org b{color:var(--gold);font-weight:500}
+</style><style id="i18n">.mode .msep{width:1px;align-self:stretch;margin:4px 3px;background:var(--line2)}.mode button[data-l]{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;padding-left:10px;padding-right:10px}</style>
+<style id="atelier">/* Companion components, built only on the template's variables (both modes). */
+.idea{font:italic 450 22px/1.45 var(--serif);color:var(--ink);border-left:3px solid var(--ac);padding:4px 0 4px 18px;margin:22px 0;max-width:62ch}
+.idea b{color:var(--ac);font-style:normal}
+.analogy{display:flex;gap:14px;align-items:flex-start;margin:18px 0;padding:14px 18px;border:1px solid var(--line2);border-radius:14px;background:color-mix(in srgb,var(--ac) 7%,transparent);max-width:78ch}
+.analogy::before{content:"≈";font:500 26px/1 var(--serif);color:var(--ac)}
+.analogy p{margin:0;color:var(--ink2)}
+.analogy b{color:var(--ink)}
+.demo{margin:22px 0 26px;border:1px solid var(--line2);border-radius:16px;background:var(--bg2);overflow:hidden}
+.demo>.dh{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}
+.demo>.dh b{font:500 11.5px/1.3 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:var(--ac);margin-right:auto}
+.demo>.db{padding:18px}
+.demo>.dc{margin:0;padding:12px 18px 16px;border-top:1px solid var(--line);color:var(--ink2);font-size:14.5px}
+.demo button,.ctl button{font:400 13px/1 var(--sans);color:var(--ink);background:transparent;border:1px solid var(--line2);border-radius:99px;padding:7px 13px;cursor:pointer}
+.demo button:hover,.ctl button:hover{border-color:var(--ac);color:var(--ac)}
+.demo button.on{background:var(--ac);border-color:var(--ac);color:var(--bg)}
+.demo button:disabled{opacity:.35;cursor:default}
+.demo input[type=range]{accent-color:var(--ac);width:180px;max-width:100%}
+.demo input[type=text],.demo input[type=number],.demo select{font:400 14px/1.2 var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:7px 10px;max-width:100%}
+.demo label{font-size:13.5px;color:var(--ink2);display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctl .cnt{font:400 12.5px/1 var(--mono);color:var(--faint);margin-left:4px}
+/* player */
+.pl{outline:none}
+.pl-stage{min-height:var(--plh,180px);display:flex;flex-direction:column;justify-content:center;gap:12px}
+.pl-cap{margin:14px 0 0;padding-top:12px;border-top:1px dashed var(--line2);color:var(--ink2);font-size:15px;min-height:3.2em}
+.pl-cap b{color:var(--ink)}
+.pl-dots{display:flex;gap:5px;flex-wrap:wrap;margin-left:6px}
+.pl-dots i{width:7px;height:7px;border-radius:50%;background:var(--line2);cursor:pointer}
+.pl-dots i.on{background:var(--ac)}
+.fadein{animation:ccfade .45s ease}
+@keyframes ccfade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+/* bricks */
+.bricks{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px 0}
+.bricks .row{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px 0;width:100%}
+.bk{position:relative;min-width:120px;max-width:230px;flex:1 1 140px;padding:10px 12px 11px;border:1px solid var(--line2);border-radius:12px;background:var(--bg);transition:opacity .3s,box-shadow .3s,border-color .3s,transform .3s}
+.bk .kd{display:block;font:500 9.5px/1.2 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
+.bk .tt{display:block;font:400 13.5px/1.3 var(--mono);color:var(--ink);word-break:break-word}
+.bk .ss{display:block;font-size:12.5px;line-height:1.35;color:var(--ink2);margin-top:4px}
+.bk.fn{border-color:color-mix(in srgb,var(--ac) 60%,transparent);background:color-mix(in srgb,var(--ac) 9%,var(--bg))}
+.bk.fn .kd{color:var(--ac)}
+.bk.data{border-style:dashed}
+.bk.test{border-color:color-mix(in srgb,var(--green) 60%,transparent)}.bk.test .kd{color:var(--green)}
+.bk.store{border-color:color-mix(in srgb,var(--violet) 60%,transparent)}.bk.store .kd{color:var(--violet)}
+.bk.ext{border-color:color-mix(in srgb,var(--sky) 60%,transparent)}.bk.ext .kd{color:var(--sky)}
+.bk.bad{border-color:var(--coral)}.bk.bad .kd{color:var(--coral)}
+.arw{flex:0 0 26px;display:flex;align-items:center;justify-content:center;color:var(--faint);font:400 18px/1 var(--sans);transition:color .3s}
+.bricks.playing .bk{opacity:.32}
+.bricks.playing .bk.lit{opacity:1;transform:translateY(-2px);box-shadow:0 0 0 2px var(--ac),0 12px 28px -16px var(--ac)}
+.bricks.playing .arw.lit{color:var(--ac)}
+@media (max-width:640px){.bk{max-width:none;flex-basis:100%}.arw{flex-basis:100%;height:18px;transform:rotate(90deg)}}
+/* notebook link */
+.nb{margin:18px 0 26px;border:1px solid color-mix(in srgb,var(--ac) 45%,transparent);border-radius:14px;padding:14px 18px;background:color-mix(in srgb,var(--ac) 6%,transparent)}
+.nb .nh{font:500 11px/1.3 var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--ac);margin:0 0 8px}
+.nb dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin:0;font-size:14.5px}
+.nb dt{color:var(--faint);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;padding-top:2px}
+.nb dd{margin:0;color:var(--ink2)}
+@media (max-width:640px){.nb dl{grid-template-columns:1fr}.nb dt{padding-top:6px}}
+/* annotated code */
+pre.code .mk{display:inline-block;min-width:1.5em;margin-left:10px;padding:0 5px;border-radius:99px;background:var(--ac);color:var(--bg);font-size:11px;line-height:1.5;text-align:center}
+ol.annot{margin:10px 0 22px;padding-left:0;list-style:none;counter-reset:a;max-width:78ch}
+ol.annot li{counter-increment:a;position:relative;padding-left:34px;margin:7px 0;color:var(--ink2);font-size:15px}
+ol.annot li::before{content:counter(a);position:absolute;left:0;top:1px;min-width:1.5em;padding:0 5px;border-radius:99px;background:var(--ac);color:var(--bg);font:400 11px/1.6 var(--mono);text-align:center}
+/* small tables, chips, charts */
+.mini{font-size:13px;color:var(--faint)}
+.mono{font-family:var(--mono)}
+.tag{display:inline-block;font:400 11.5px/1.5 var(--mono);padding:1px 8px;border-radius:99px;border:1px solid var(--line2);color:var(--ink2)}
+.tag.ok{border-color:var(--green);color:var(--green)}.tag.ko{border-color:var(--coral);color:var(--coral)}.tag.hl{border-color:var(--ac);color:var(--ac)}
+svg.ch{width:100%;height:auto;display:block;overflow:visible}
+svg.ch text{font:400 11px var(--sans);fill:var(--faint)}
+svg.ch .lab{fill:var(--ink2);font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink2);margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:18px;height:0;border-top:2.5px solid var(--lc);margin-right:7px;vertical-align:.25em}
+.legend span.d::before{border-top-style:dashed}
+.cells{display:flex;flex-wrap:wrap;gap:4px}
+.cells i{font:normal 400 12.5px/1 var(--mono);min-width:26px;padding:6px 6px;text-align:center;border:1px solid var(--line2);border-radius:6px;color:var(--ink2);transition:all .25s}
+.cells i.on{background:var(--ac);border-color:var(--ac);color:var(--bg)}
+.cells i.bad{border-color:var(--coral);color:var(--coral)}
+.cells i.ok{border-color:var(--green);color:var(--green)}
+.recap{display:grid;gap:10px;margin:18px 0}
+.recap div{display:grid;grid-template-columns:56px 1fr;gap:14px;align-items:start;padding:12px 16px;border:1px solid var(--line);border-radius:12px}
+.recap div b{font:italic 450 22px/1 var(--serif);color:var(--ac)}
+.recap div span{color:var(--ink2)}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.twocol{grid-template-columns:1fr}}
+.qa{display:grid;gap:12px;margin:18px 0}
+.qa details{border:1px solid var(--line);border-radius:14px;padding:14px 18px;background:var(--bg2)}
+.qa summary{cursor:pointer;font-weight:500;color:var(--ink)}
+.qa summary::marker{color:var(--gold)}
+.qa details p{margin:10px 0 0;color:var(--ink2)}
+.demo .kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.nb code{overflow-wrap:anywhere}
+.envrow{display:grid;grid-template-columns:110px 1fr 170px;gap:6px 14px;align-items:center}
+.envrow input[type=range]{width:100%}
+.envrow .bar{grid-column:2/4}
+@media (max-width:640px){.demo>.db{overflow-x:auto}.envrow{grid-template-columns:1fr}.envrow .bar{grid-column:auto}}
+
+.stchip{display:inline-block;font:500 11px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--c);border:1px solid var(--c);border-radius:99px;padding:6px 10px;margin-bottom:10px}
+.chain{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.chain span{font:400 12px/1 var(--sans);padding:6px 10px;border-radius:99px;border:1px solid var(--line2);color:var(--faint)}
+.chain span.done{color:var(--ink2)}
+.chain span.on{background:var(--ac);border-color:var(--ac);color:var(--bg);font-weight:500}
+.modtag{font:400 12.5px/1.3 var(--mono);color:var(--ac)}
+.modtag::before{content:"qui le fait · ";font-family:var(--sans);color:var(--faint)}
+.pl-stage pre.code{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.rp{display:grid;grid-template-columns:1fr 1.5fr;gap:14px}
+.rp .pan{border:1px solid var(--line2);border-radius:12px;padding:10px 12px;transition:opacity .3s}
+.rp .pan.dim{opacity:.38}
+.rp .pan>b{display:block;font:500 11px/1.3 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--ac);margin-bottom:8px}
+.rp .cols{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rp .cols i{display:block;font:normal 500 10px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin:2px 0 6px}
+.fl{border:1px solid var(--line2);border-radius:8px;padding:6px 8px;margin:0 0 6px;background:var(--bg);transition:all .3s}
+.fl code{display:block;background:none;border:0;box-shadow:none;padding:0;font:500 12.5px/1.3 var(--mono);color:var(--ink);overflow-wrap:anywhere}
+.fl small{display:block;font-size:11.5px;color:var(--faint);line-height:1.3}
+.fl.bad{border-color:var(--coral);background:color-mix(in srgb,var(--coral) 14%,var(--bg))}
+.fl.ok{border-color:var(--green);background:color-mix(in srgb,var(--green) 14%,var(--bg))}
+.fl.active{border-color:var(--sky);background:color-mix(in srgb,var(--sky) 14%,var(--bg))}
+.fl.new{border-style:dashed}
+@media (max-width:700px){.rp,.rp .cols{grid-template-columns:1fr}}
+table.axes td:nth-child(3){transition:filter .3s,opacity .3s}
+table.axes:not(.reveal) td:nth-child(3){filter:blur(5px);opacity:.5;user-select:none}
+.legendst{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--ink2);margin:8px 0 0}
+.legendst span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
+.brk .card h3 b{font:italic 450 24px/1 var(--serif);color:var(--c);margin-right:8px}
+.brk .card .done{margin-top:10px;padding-top:8px;border-top:1px solid var(--line);font-size:14px;color:var(--ink2)}
+.brk .card .done::before{content:"C'est fait quand ";color:var(--c);font-weight:500}
+.skip{display:flex;flex-wrap:wrap;gap:6px}
+.skip span{font-size:13px;padding:5px 11px;border:1px solid var(--line2);border-radius:99px;color:var(--ink2)}
+details.more{margin:10px 0;border:1px solid var(--line2);border-radius:12px;padding:0 16px;max-width:82ch}
+details.more>summary{cursor:pointer;list-style:none;padding:13px 0;font:500 14.5px/1.4 var(--sans);color:var(--ink)}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"+";display:inline-block;width:1.2em;color:var(--ac)}
+details.more[open]>summary::before{content:"−"}
+details.more[open]{padding-bottom:14px}
+details.more p{margin:0;color:var(--ink2)}
+details.more p.q{margin-bottom:8px;color:var(--ink)}
+.todo2{list-style:none;padding:0;margin:12px 0;max-width:82ch}
+.todo2 li{position:relative;padding:6px 0 6px 30px;color:var(--ink2)}
+.todo2 li::before{content:"";position:absolute;left:0;top:9px;width:16px;height:16px;border:1.5px solid var(--ac);border-radius:4px}
+pre.code{font-variant-ligatures:none}
+
+.term{all:unset;cursor:help;border-bottom:1.5px dotted var(--ac,var(--gold));color:inherit}
+.term:hover,.term:focus-visible{color:var(--ac,var(--gold));outline:none}
+#gloss{position:absolute;z-index:80;max-width:min(360px,88vw);background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;
+ box-shadow:0 18px 40px -18px rgba(0,0,0,.6);font-size:14px;line-height:1.45;color:var(--ink2)}
+#gloss b{display:block;color:var(--ink);font-weight:500;margin-bottom:4px}
+#gloss[hidden]{display:none}
+:root[data-mode="light"] #gloss{background:#FFFCF7}
+.ctx{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;max-width:82ch;margin:0 0 18px;padding:12px 16px;border:1px solid var(--line2);border-left:3px solid var(--ac);border-radius:10px;font-size:14.5px}
+.ctx dt{font:500 11px/1.9 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--ac)}
+.ctx dd{margin:0;color:var(--ink2)}
+.io{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;margin:6px 0 8px;color:var(--ink2)}
+.io span b{font-weight:500;color:var(--ac)}
+.badge{display:inline-block;font:500 10.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;padding:5px 8px;border-radius:99px;border:1px solid currentColor;margin-left:8px;vertical-align:2px}
+.badge.here{color:var(--green)}.badge.next{color:var(--amber)}.badge.mvp{color:var(--sky)}
+.map3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.map3 .colh{font:500 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
+.addh{font:500 15px/1.3 var(--sans);color:var(--ink);margin:0 0 10px}
+.chainwrap{max-width:1080px;margin:6px 0 20px;display:flex;flex-direction:column;gap:14px;overflow-x:auto;padding-bottom:4px}
+.chainrow{display:flex;align-items:stretch;gap:0;min-width:max-content}
+.cnode{border:1px solid var(--line2);border-radius:10px;padding:9px 12px;background:var(--bg);min-width:120px}
+.cnode code{display:block;background:none;border:0;box-shadow:none;padding:0;font:500 13px var(--mono);color:var(--ink)}
+.cnode small{display:block;font-size:12px;color:var(--faint);margin-top:3px}
+.cnode.ghost{border-style:dashed;opacity:.7}
+.cedge{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 14px 0 10px;min-width:110px;text-align:center}
+.cedge::after{content:"";position:absolute;left:4px;right:4px;top:50%;border-top:1.5px solid var(--ac)}
+.cedge::before{content:"";position:absolute;right:2px;top:calc(50% - 5px);border-left:8px solid var(--ac);border-top:5px solid transparent;border-bottom:5px solid transparent}
+.cedge code{position:relative;top:-12px;background:none;border:0;box-shadow:none;padding:0;font:500 12.5px var(--mono);color:var(--ac)}
+.cedge small{position:relative;top:10px;font-size:11.5px;color:var(--ink2)}
+.fl.new{border-color:var(--green);border-style:dashed;background:color-mix(in srgb,var(--green) 12%,var(--bg))}
+@media (max-width:700px){.map3{grid-template-columns:1fr}}
+
+.tline{list-style:none;margin:6px 0 22px;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;max-width:1080px}
+.tline li{border-top:2px solid var(--ac);padding:10px 4px 0;font-size:13.5px;color:var(--ink2);line-height:1.4}
+.tline li b{display:block;font:500 13px var(--mono);color:var(--ac);margin-bottom:4px}
+.repomap{width:100%;height:auto;display:block}
+.repomap .fbox rect{fill:var(--bg);stroke:var(--line2);stroke-width:1.4;transition:stroke .2s,fill .2s}
+.repomap .fbox{cursor:pointer;outline:none}
+.repomap .fbox:hover rect,.repomap .fbox:focus-visible rect,.repomap .fbox.on rect{stroke:var(--ac);fill:color-mix(in srgb,var(--ac) 12%,var(--bg))}
+.repomap .fn{font:500 13px var(--mono);fill:var(--ink)}.repomap .fs{font:12px var(--sans);fill:var(--faint)}
+.repomap .arr{fill:none;stroke:var(--ink2);stroke-width:1.4;opacity:.75}.repomap .arr.ext{stroke-dasharray:5 4;stroke:var(--amber)}
+.repomap .ah{fill:var(--ink2)}.repomap .colh2{font:500 12px var(--sans);letter-spacing:.2em;fill:var(--faint)}
+.finfo{margin-top:12px;padding:12px 14px;border-left:3px solid var(--ac);background:color-mix(in srgb,var(--ac) 8%,transparent);font-size:14.5px;color:var(--ink2);min-height:3.2em}
+.finfo b{display:block;color:var(--ink);font:500 14px var(--mono);margin-bottom:4px}
+.dms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:1080px}
+.dm .dmc{margin:0 0 6px;font-size:13.5px;color:var(--ac)}
+.dm pre.code{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12.5px}
+.dm pre.cmd{border-bottom:1px solid var(--line);opacity:.85}
+.dm:last-child{grid-column:1/-1}
+.gram{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;max-width:1080px}
+.gh{margin:0 0 8px;font:500 11px var(--sans);letter-spacing:.2em;text-transform:uppercase}.gh.ok{color:var(--green)}.gh.no{color:var(--amber)}
+.gc{display:flex;flex-wrap:wrap;gap:6px}.gc span{font:12.5px var(--mono);font-variant-ligatures:none;padding:5px 10px;border-radius:99px;border:1px solid}
+.gc.ok span{border-color:color-mix(in srgb,var(--green) 60%,transparent);color:var(--ink)}.gc.no span{border-color:color-mix(in srgb,var(--amber) 60%,transparent);border-style:dashed;color:var(--ink2)}
+.tgs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;max-width:1080px}
+.tg{border:1px solid var(--line2);border-radius:10px;padding:10px 12px}
+.tgh{display:flex;justify-content:space-between;font-size:14px}.tgh span{color:var(--faint);font-size:12.5px}
+.tgb{height:6px;background:var(--line);border-radius:3px;margin:8px 0}.tgb i{display:block;height:100%;background:var(--green);border-radius:3px}
+.tg p{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.4}
+@media (max-width:820px){.tline,.dms,.gram,.tgs{grid-template-columns:1fr}}
+
+.quiz{border:1px solid var(--line2);border-radius:14px;background:var(--bg2);padding:18px 20px;max-width:1080px;margin:8px 0 18px}
+:root[data-mode="light"] .quiz{background:#FFFCF7}
+.qhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 14px}
+.qhead .qn{font:500 11px/1 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:var(--ac)}
+.qdots{display:flex;gap:6px}
+.qdots button{all:unset;cursor:pointer;width:26px;height:6px;border-radius:99px;background:var(--line2)}
+.qdots button.done{background:color-mix(in srgb,var(--ac) 55%,transparent)}
+.qdots button[aria-current="step"]{background:var(--ac)}
+.qdots button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+.qstep[hidden]{display:none}
+.qstep h3{font:500 20px/1.25 var(--sans);color:var(--ink);margin:0 0 14px;outline:none}
+.qblk{margin:0 0 14px;padding-left:14px;border-left:2px solid var(--line2)}
+.qblk .ql{display:block;font:500 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin:2px 0 8px}
+.qblk p{margin:0 0 8px;color:var(--ink2);max-width:82ch}
+.qblk pre.code{margin:6px 0 10px;white-space:pre-wrap;overflow-wrap:anywhere}
+.qblk.ask{border-left-color:var(--ac)}
+.qblk.ask .ql{color:var(--ac)}
+.qq{font-weight:500;color:var(--ink)!important}
+.qopts{display:grid;gap:8px;margin:10px 0 0;max-width:86ch}
+.qopt{all:unset;box-sizing:border-box;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;cursor:pointer;padding:10px 12px;border:1px solid var(--line2);border-radius:10px;background:var(--bg);color:var(--ink);font-size:14.5px;line-height:1.45}
+.qopt:hover{border-color:var(--ac)}
+.qopt:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.qopt .qlt{font:600 12px/26px var(--mono);text-align:center;border:1px solid var(--line2);border-radius:50%;width:26px;height:26px;color:var(--ink2)}
+.qopt .qlt{grid-row:1;grid-column:1}.qopt .tx{grid-row:1;grid-column:2}
+.qopt .fb{display:none;grid-row:2;grid-column:2;font-size:13.5px;color:var(--ink2);padding-top:6px;border-top:1px dashed var(--line2);margin-top:4px}
+.qopt[aria-pressed="true"] .fb{display:block}
+.qopt.yes[aria-pressed="true"]{border-color:var(--green);background:color-mix(in srgb,var(--green) 12%,var(--bg))}
+.qopt.yes[aria-pressed="true"] .qlt{border-color:var(--green);color:var(--green)}
+.qopt.no[aria-pressed="true"]{border-color:var(--coral);background:color-mix(in srgb,var(--coral) 10%,var(--bg))}
+.qopt.no[aria-pressed="true"] .qlt{border-color:var(--coral);color:var(--coral)}
+.qopt .fb b.v{font-weight:600}
+.qopt.yes .fb b.v{color:var(--green)}.qopt.no .fb b.v{color:var(--coral)}
+.qact{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 4px}
+.qbtn{all:unset;cursor:pointer;font:500 13.5px/1 var(--sans);padding:10px 14px;border-radius:99px;border:1px solid var(--ac);color:var(--ink)}
+.qbtn.pri{background:color-mix(in srgb,var(--ac) 22%,transparent)}
+.qbtn:hover{background:color-mix(in srgb,var(--ac) 30%,transparent)}
+.qbtn:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.qbtn[disabled]{opacity:.4;cursor:default;background:none}
+.qhint{font-size:13px;color:var(--faint)}
+.qprop{margin:12px 0 0;padding:14px 16px;border:1px solid var(--line2);border-left:3px solid var(--ac);border-radius:10px;background:var(--bg)}
+.qprop[hidden]{display:none}
+.qprop>p{margin:12px 0 0;color:var(--ink2);max-width:82ch}
+.qprop pre.code{margin:10px 0 0}
+.qnav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0 0;padding-top:14px;border-top:1px solid var(--line2)}
+.qcost{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 16px}
+.qcost span{font:500 13px/1 var(--sans);padding:8px 10px;border:1px solid var(--line2);border-radius:8px;color:var(--ink2)}
+.qcost span b{font:600 15px var(--mono);color:var(--ac);margin-right:6px}
+@media (prefers-reduced-motion:no-preference){.qprop:not([hidden]),.qopt .fb{animation:qin .25s ease}@keyframes qin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}}
+
+@media (min-width:900px){.page .toc{grid-template-columns:repeat(8,1fr)}}
+</style>
+</head><body>
+<div class="mode" role="group" aria-label="Thème" data-en-aria-label="Theme" translate="no"><button data-m="system" aria-label="Thème du système" title="Thème du système" data-en-aria-label="System theme" data-en-title="System theme">auto</button><button data-m="dark" aria-label="Mode sombre" title="Mode sombre" data-en-aria-label="Dark mode" data-en-title="Dark mode">☾</button><button data-m="light" aria-label="Mode clair" title="Mode clair" data-en-aria-label="Light mode" data-en-title="Light mode">☀</button><span class="msep i18n" aria-hidden="true"></span><button class="i18n" data-l="fr" lang="fr">FR</button><button class="i18n" data-l="en" lang="en">EN</button></div>
+<div class="page">
+<header class="hero">
+<span class="orb o-violet" style="width:200px;height:200px;right:calc(var(--g) - 118px);top:150px"></span>
+<span class="orb o-green" style="width:50px;height:50px;right:calc(var(--g) + 116px);top:118px"></span>
+<span style="position:absolute;width:116px;height:116px;right:calc(var(--g) - 10px);bottom:-54px;z-index:-1"><span class="orb o-amber" style="inset:0"></span><span class="ring"></span></span>
+<div class="top"><div class="org">TDLOG <b>·</b> Projet 15 · Text-to-SQL vérifié <b>·</b> dépôt <span translate="no" style="text-transform:none;letter-spacing:.04em;font-family:var(--mono)">Text_to_SQL</span></div></div>
+<p class="kick">Séance 7 · architecture · lundi 23 novembre</p>
+<h1>Du flux de votre MVP <em>à votre architecture</em></h1>
+<p class="sub">Une page faite pour votre projet, à parcourir en équipe en attendant mon passage. Les mots soulignés en pointillés s'expliquent d'un clic.</p>
+<div class="chips"><span class="chip"><i>①</i>Suivre le flux du MVP</span><span class="chip"><i>②</i>En tirer les modules</span><span class="chip"><i>③</i>Jouer les ajouts</span><span class="chip"><i>④</i>Reconnaître les motifs</span><span class="chip"><i>⑤</i>Écrire les décisions</span></div>
+</header>
+<nav class="toc"><a href="#aujourdhui" style="--ac:var(--gold)"><span>01</span>Aujourd'hui</a><a href="#code" style="--ac:var(--coral)"><span>02</span>Votre code</a><a href="#flux" style="--ac:var(--teal)"><span>03</span>Le flux du MVP</a><a href="#modules" style="--ac:var(--sky)"><span>04</span>Étapes et modules</a><a href="#ajouts" style="--ac:var(--pink)"><span>05</span>Les ajouts</a><a href="#general" style="--ac:var(--violet)"><span>06</span>Généraliser</a><a href="#design" style="--ac:var(--green)"><span>07</span>DESIGN.md</a><a href="#marche" style="--ac:var(--amber)"><span>08</span>D'ici le 7/12</a></nav>
+<section id="aujourdhui" style="--ac:var(--gold)">
+<div class="sh"><div class="n">01</div><div><p class="k">Pour commencer</p><h2>Le projet, la séance, où vous en êtes</h2></div></div>
+<div class="prose">
+<h3>Le projet en trente secondes</h3>
+<p>Un utilisateur pose une question en anglais sur la base <button type="button" class="term" data-t="chinook">Chinook</button> : « Which customers live in France? ». Un <button type="button" class="term" data-t="llm">modèle de langage</button> l'écrit en <button type="button" class="term" data-t="sql">SQL</button>. Votre programme ne lui fait pas confiance : il découpe la requête (<button type="button" class="term" data-t="lexer">lexer</button>), vérifie qu'elle respecte la <button type="button" class="term" data-t="grammar">grammaire</button> (<button type="button" class="term" data-t="parser">parser</button>), puis l'exécute en <button type="button" class="term" data-t="ro">lecture seule</button>. C'est le <button type="button" class="term" data-t="text2sql">Text-to-SQL</button> vérifié.</p>
+<h3>L'objectif de la séance</h3>
+<p>Une architecture, c'est la façon de découper le code en <button type="button" class="term" data-t="module">modules</button> et de décider qui parle à qui. On ne la tire pas d'un chapeau : on part de ce que fait votre <button type="button" class="term" data-t="mvp">MVP</button>, puis on regarde ce que chaque ajout prévu coûterait. À 15h30, votre dépôt contient un <code>DESIGN.md</code> avec vos premières décisions. Elles pourront changer : on les met à jour, avec la raison.</p>
+<h3>Où vous en êtes</h3></div>
+<span class="stchip" style="--c:var(--green)">Le MVP tourne</span>
+<div class="prose"><p>Depuis hier, votre dépôt a franchi un cap : le code est dans <code>src/</code>, 17 tests passent (<code>unittest</code>, vérifié ce matin) et la CI les lance à chaque push. <code>t2s.py run</code> refuse <code>DELETE</code> avant même d'ouvrir la base, et ouvre Chinook en lecture seule avec deux barrières (<code>mode=ro</code> et <code>query_only</code>). Ce qui reste du jalon, d'après votre README : <code>Design.md</code> et <code>AGENTS.md</code> à compléter. Sur les 12 <button type="button" class="term" data-t="refs">requêtes de référence</button> (en bas de cette page), 5 passent : les refus viennent de <code>JOIN</code> sans <code>INNER</code>, de <code>AVG</code> et de <code>DISTINCT</code>.</p></div>
+<div class="prose"><h3>En attendant mon passage</h3><p>Environ une heure, dans l'ordre :</p></div>
+<div class="steps"><span>Relire ce que vous avez construit, avec la carte de votre dépôt (5 min)</span><span>Le flux du MVP, étape par étape (10 min)</span><span>Étapes et modules : qui reçoit quoi, qui rend quoi (10 min)</span><span>Les ajouts : prédire les fichiers touchés, puis vérifier (20 min)</span><span>Reconnaître les motifs du cours (5 min)</span><span>Trois décisions dans <code>DESIGN.md</code>, <button type="button" class="term" data-t="spec">commit spec:</button> (15 min)</span></div>
+<p class="idea">On part de ce que fait votre code, étape par étape, sur une vraie requête du modèle. Puis on ajoute, une à une, les fonctions prévues : <b>chaque ajout dit quels découpages tiennent et quelles interfaces méritent d'exister</b>.</p>
+</section>
+<section id="code" style="--ac:var(--coral)">
+<div class="sh"><div class="n">02</div><div><p class="k">Point de départ</p><h2>Ce que vous avez construit jusqu'ici</h2></div></div>
+<div class="prose"><h3>Votre parcours depuis le 9 novembre</h3></div>
+<ol class="tline"><li><b>09/11</b><span>Le dépôt : base Chinook, <code>SPEC.md</code> et <code>AGENTS.md</code> créés (encore vides)</span></li><li><b>14/11</b><span>Première grammaire (EBNF) dans <code>Design.md</code></span></li><li><b>15/11</b><span>Lexer v1</span></li><li><b>21/11</b><span>Lexer v2 (positions, types) et parser par descente récursive, fusionnés par pull request</span></li><li><b>22/11</b><span>Réorganisation en <code>src/</code> et <code>tests/</code>, 17 tests, CI, ligne de commande <code>t2s.py</code>, page de présentation</span></li></ol>
+<div class="prose"><h3>La carte de votre dépôt</h3><p>Une boîte par fichier, une flèche pleine par <code>import</code>, une flèche pointillée quand un fichier ouvre la base. <b>Cliquez sur un fichier</b> pour voir ce qu'il fait.</p></div>
+<div class="demo"><div class="db"><svg viewBox="0 0 900 360" class="repomap" role="img" aria-label="Les fichiers du dépôt et qui importe qui"><defs><marker id="fa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs><path d="M260,62 L328,62" class="arr" marker-end="url(#fa)"/><path d="M140,102 L140,148" class="arr" marker-end="url(#fa)"/><path d="M260,182 L328,282" class="arr" marker-end="url(#fa)"/><path d="M20,292 L8,292 L8,72 L18,72" class="arr" marker-end="url(#fa)"/><path d="M260,282 L328,182" class="arr" marker-end="url(#fa)"/><path d="M260,300 L328,300" class="arr" marker-end="url(#fa)"/><path d="M260,272 L328,92" class="arr" marker-end="url(#fa)"/><path d="M450,102 L450,148" class="arr" marker-end="url(#fa)"/><path d="M570,70 L600,70 L600,292 L572,292" class="arr" marker-end="url(#fa)"/><path d="M140,40 L140,18 L760,18 L760,38" class="arr ext" marker-end="url(#fa)"/><path d="M760,150 L760,104" class="arr ext" marker-end="url(#fa)"/><g class="fbox" data-f="t2s" tabindex="0" role="button" aria-label="tests/t2s.py"><rect x="20" y="40" width="240" height="62" rx="8"/><text x="32" y="66" class="fn">tests/t2s.py</text><text x="32" y="86" class="fs">83 lignes</text></g><g class="fbox" data-f="cli" tabindex="0" role="button" aria-label="tests/cli_display.py"><rect x="20" y="150" width="240" height="62" rx="8"/><text x="32" y="176" class="fn">tests/cli_display.py</text><text x="32" y="196" class="fs">73 lignes</text></g><g class="fbox" data-f="test" tabindex="0" role="button" aria-label="tests/test_text_to_sql.py"><rect x="20" y="260" width="240" height="62" rx="8"/><text x="32" y="286" class="fn">tests/test_text_to_sql.py</text><text x="32" y="306" class="fs">213 lignes</text></g><g class="fbox" data-f="parser" tabindex="0" role="button" aria-label="src/parser.py"><rect x="330" y="40" width="240" height="62" rx="8"/><text x="342" y="66" class="fn">src/parser.py</text><text x="342" y="86" class="fs">507 lignes</text></g><g class="fbox" data-f="lexer" tabindex="0" role="button" aria-label="src/Lexer.py"><rect x="330" y="150" width="240" height="62" rx="8"/><text x="342" y="176" class="fn">src/Lexer.py</text><text x="342" y="196" class="fs">190 lignes</text></g><g class="fbox" data-f="ast" tabindex="0" role="button" aria-label="src/sql_ast.py"><rect x="330" y="260" width="240" height="62" rx="8"/><text x="342" y="286" class="fn">src/sql_ast.py</text><text x="342" y="306" class="fs">80 lignes</text></g><g class="fbox" data-f="db" tabindex="0" role="button" aria-label="data/Chinook_Sqlite.sqlite"><rect x="640" y="40" width="240" height="62" rx="8"/><text x="652" y="66" class="fn">data/Chinook_Sqlite.sqlite</text><text x="652" y="86" class="fs">base SQLite</text></g><g class="fbox" data-f="explo" tabindex="0" role="button" aria-label="data/explorer_chinook.py"><rect x="640" y="150" width="240" height="62" rx="8"/><text x="652" y="176" class="fn">data/explorer_chinook.py</text><text x="652" y="196" class="fs">24 lignes</text></g><g class="fbox" data-f="ci" tabindex="0" role="button" aria-label=".github/workflows/tests.yml"><rect x="640" y="260" width="240" height="62" rx="8"/><text x="652" y="286" class="fn">.github/workflows/tests.yml</text><text x="652" y="306" class="fs">13 lignes</text></g><text x="140" y="352" class="colh2" text-anchor="middle">tests/</text><text x="450" y="352" class="colh2" text-anchor="middle">src/</text><text x="760" y="352" class="colh2" text-anchor="middle">data/ et CI</text></svg><div class="finfo" id="finfo" aria-live="polite"><b>Cliquez sur un fichier.</b></div></div></div>
+<div class="prose"><h3>Ce qui marche, montré pour de vrai</h3><p>Les commandes de votre README, lancées ce matin sur votre dépôt (Python 3.10), et une requête plus riche en plus :</p></div>
+<div class="dms"><div class="dm"><p class="dmc">L'arbre, clause par clause.</p><pre class="code cmd">$ python tests/t2s.py parse &quot;SELECT FirstName, LastName FROM Customer LIMIT 5&quot; --pretty</pre><pre class="code">Arbre syntaxique (AST)
+  SELECT     FirstName, LastName
+  FROM       Customer
+  LIMIT      5</pre></div><div class="dm"><p class="dmc">Le refus, avec la position exacte.</p><pre class="code cmd">$ python tests/t2s.py parse &quot;SELECT FROM Customer&quot; --pretty</pre><pre class="code">Erreur de syntaxe
+SELECT FROM Customer
+       ^
+An identifier was expected. Found &#x27;FROM&#x27; (KEYWORD) at line 1, column 8.</pre></div><div class="dm"><p class="dmc">Garde, puis exécution en lecture seule.</p><pre class="code cmd">$ python tests/t2s.py run &quot;SELECT FirstName FROM Customer WHERE Country = &#x27;France&#x27; ORDER BY CustomerId LIMIT 3&quot; --pretty</pre><pre class="code">Résultat Chinook (3 lignes)
+FirstName
+---------
+Camille
+Dominique
+Marc</pre></div><div class="dm"><p class="dmc">Refusé avant même d'ouvrir la base.</p><pre class="code cmd">$ python tests/t2s.py run &quot;DELETE FROM Customer&quot; --pretty</pre><pre class="code">Requête refusée avant exécution
+DELETE FROM Customer
+^
+The keyword SELECT was expected. Found &#x27;DELETE&#x27; (IDENTIFIER) at line 1, column 1.</pre></div><div class="dm"><p class="dmc">Jointure, agrégat, regroupement, tri : tout passe.</p><pre class="code cmd">$ python tests/t2s.py run &quot;SELECT c.FirstName, COUNT(*) AS n FROM Customer AS c INNER JOIN Invoice AS i ON c.CustomerId = i.CustomerId WHERE c.Country = &#x27;France&#x27; GROUP BY c.FirstName ORDER BY n DESC LIMIT 3&quot; --pretty</pre><pre class="code">Résultat Chinook (3 lignes)
+FirstName | n
+----------+--
+Wyatt     | 7
+Marc      | 7
+Isabelle  | 7</pre></div></div>
+<div class="prose"><h3>La grammaire que votre parser accepte</h3></div>
+<div class="gram"><div><p class="gh ok">accepté</p><div class="gc ok"><span>SELECT … FROM</span><span>alias (AS)</span><span>une INNER JOIN … ON</span><span>WHERE avec AND</span><span>= &lt;&gt; &lt; &lt;= &gt; &gt;=</span><span>IS [NOT] NULL</span><span>COUNT, SUM</span><span>GROUP BY</span><span>HAVING</span><span>ORDER BY ASC/DESC</span><span>LIMIT</span></div></div><div><p class="gh no">pas encore</p><div class="gc no"><span>JOIN sans INNER</span><span>plusieurs jointures</span><span>AVG, MIN, MAX</span><span>DISTINCT</span><span>OR</span><span>IN (…)</span><span>SELECT *</span><span>sous-requêtes</span></div></div></div>
+<div class="prose"><p>Les manques comptent : le modèle écrit souvent <code>JOIN</code> seul, <code>AVG</code> et <code>DISTINCT</code>. C'est pourquoi 5 des 12 requêtes de référence passent aujourd'hui.</p>
+<h3>Vos 17 tests</h3><p><code>python -m unittest discover -s tests</code> : 17 tests, tous verts ce matin, en 0,4 s.</p></div>
+<div class="tgs"><div class="tg"><div class="tgh"><b>Lexer</b><span>5 tests</span></div><div class="tgb"><i style="width:90%"></i></div><p>chaînes avec apostrophe doublée, nombres, opérateurs et positions, erreurs lexicales</p></div><div class="tg"><div class="tgh"><b>Parser</b><span>4 tests</span></div><div class="tgb"><i style="width:72%"></i></div><p>16 requêtes valides et 5 invalides (au bon jeton), forme de l&#x27;arbre, refus de DELETE</p></div><div class="tg"><div class="tgh"><b>Exécution</b><span>3 tests</span></div><div class="tgb"><i style="width:54%"></i></div><p>un SELECT sur Chinook, refus avant ouverture, la connexion elle-même refuse DELETE</p></div><div class="tg"><div class="tgh"><b>Ligne de commande</b><span>5 tests</span></div><div class="tgb"><i style="width:90%"></i></div><p>parse, erreur de syntaxe, run, refus de DELETE, erreur SQLite</p></div></div>
+<div class="prose"><h3>Ce qui reste du jalon, d'après votre README</h3><ul><li><code>Design.md</code> : la grammaire est là, il manque les règles <code>aggregate_expr</code> et <code>string_char</code>, des exemples acceptés et refusés, la répartition du travail.</li><li><code>AGENTS.md</code> et <code>SPEC.md</code> : créés le 9/11, encore vides.</li></ul></div>
+</section>
+<section id="flux" style="--ac:var(--teal)">
+<div class="sh"><div class="n">03</div><div><p class="k">Étape 1 · le cas concret</p><h2>Le flux du MVP, de la question aux lignes</h2></div></div>
+<dl class="ctx"><dt>Où on en est</dt><dd>Vous connaissez le projet. Votre MVP existe : une requête SQL écrite à la main, découpée, mise en arbre, exécutée en lecture seule. La prochaine marche est de mettre le modèle devant.</dd><dt>Objectif</dt><dd>Suivre une vraie requête à travers chaque étape, et noter ce que chaque étape reçoit et rend.</dd></dl>
+<div class="prose"><p>Une vraie question, et la vraie réponse d'un petit modèle (Qwen2.5 0,5B), obtenue en préparant cette page avec un prototype complet de la chaîne. Le code passé à chaque étape est le vôtre quand le badge dit « déjà dans votre code » (exécuté ce matin sur votre dépôt), sinon celui du prototype. Avancez avec ▶ : avant chaque étape, devinez ce qui va sortir.</p></div>
+<div class="prose"><p class="mini">Sous chaque étape : <b>qui le fait</b> (le fichier et la fonction), et un badge qui dit si ce code existe déjà. <span class="badge here">déjà dans votre code</span> <span class="badge next">pas encore codé</span> <span class="badge mvp">à écrire pour le MVP</span></p></div>
+<div class="demo"><div class="dh"><b>Une question, du texte jusqu'aux lignes</b></div><div class="db"><div data-frames="flow"></div></div></div>
+</section>
+<section id="modules" style="--ac:var(--sky)">
+<div class="sh"><div class="n">04</div><div><p class="k">Étape 2 · découper</p><h2>Des étapes aux modules, et leurs contrats</h2></div></div>
+<dl class="ctx"><dt>Où on en est</dt><dd>Vous avez suivi une requête à travers les étapes du flux (section précédente).</dd><dt>Objectif</dt><dd>Répondre à deux questions : <b>quel fichier fait chaque étape</b>, et <b>qu'est-ce qui passe d'un fichier au suivant</b>. Ce qui passe, c'est le <button type="button" class="term" data-t="contract">contrat</button> entre les deux.</dd></dl>
+<div class="prose"><p>Dans le flux, chaque étape transforme quelque chose en autre chose : du texte en <button type="button" class="term" data-t="token">jetons</button>, des jetons en <button type="button" class="term" data-t="ast">arbre</button>, une requête en lignes. Chaque étape est faite par un morceau de code, un <button type="button" class="term" data-t="module">module</button>. Le schéma ci-dessous montre la chaîne : <b>les boîtes sont les modules</b>, <b>ce qui est écrit sur les flèches est ce qu'ils se passent</b>.</p></div>
+<div class="chainwrap"><div class="chainrow"><div class="cnode"><code>tests/t2s.py</code><small>lit la requête</small></div><div class="cedge"><code>str</code><small>la requête SQL</small></div><div class="cnode"><code>src/Lexer.py · tokenize</code><small>découpe</small></div><div class="cedge"><code>list[tuple]</code><small>(type, valeur, ligne, colonne)</small></div><div class="cnode"><code>src/parser.py · parse_sql</code><small>analyse</small></div><div class="cedge"><code>SelectQuery</code><small>l'arbre, en dataclasses</small></div><div class="cnode ghost"><code>jeté</code><small>ne sert que de garde</small></div></div><div class="chainrow"><div class="cnode"><code>tests/t2s.py</code><small>si la garde passe</small></div><div class="cedge"><code>str</code><small>la même requête</small></div><div class="cnode"><code>tests/t2s.py · open_read_only</code><small>exécute en lecture seule</small></div><div class="cedge"><code>list[tuple]</code><small>les lignes</small></div><div class="cnode"><code>tests/cli_display.py</code><small>affiche</small></div></div></div>
+<div class="prose"><h3>Pourquoi ce qui passe sur les flèches compte autant</h3>
+<p>Tant que ce qui passe sur une flèche ne change pas, chacun peut réécrire l'intérieur de son module sans prévenir les autres, et deux personnes peuvent coder les deux bouts en parallèle. S'il change, ou s'il n'est écrit nulle part, tout ce qui est derrière la flèche peut casser.</p>
+<p><b>Un exemple chez vous.</b> Votre parser lit chaque jeton en le déballant à quatre places : <code>token_type, value, _, _ = self.current</code>. Le contrat entre le lexer et le parser est donc « un tuple de exactement quatre champs, dans cet ordre ». Il n'est écrit nulle part : si l'un de vous ajoute au lexer un cinquième champ (la position de fin du jeton, par exemple), le parser plante sur la première requête :</p>
+<pre class="code">ValueError: too many values to unpack (expected 4)</pre>
+<p>Avec une <code>dataclass Token(type, value, line, column)</code>, le contrat est écrit, le parser lit <code>token.type</code>, et ajouter un champ ne casse rien.</p></div>
+<div class="prose"><h3>Le même découpage, en tableau</h3><p>Une ligne par étape : le fichier qui la fait, ce qu'il reçoit, ce qu'il rend, et s'il existe déjà.</p></div>
+<div class="tblwrap"><table class="tbl"><thead><tr><th>étape</th><th>module</th><th>reçoit</th><th>rend</th><th></th></tr></thead><tbody><tr><td>lire la requête, afficher</td><td><code>tests/t2s.py (main)</code></td><td>argv</td><td>texte à l'écran</td><td><span class="badge here">déjà dans votre code</span></td></tr><tr><td>générer le SQL</td><td><code>à écrire : llm.py</code></td><td>question + schéma</td><td>str (SQL)</td><td><span class="badge next">pas encore codé</span></td></tr><tr><td>découper</td><td><code>src/Lexer.py · tokenize</code></td><td>str</td><td>list[tuple]</td><td><span class="badge here">déjà dans votre code</span></td></tr><tr><td>analyser</td><td><code>src/parser.py · parse_sql</code></td><td>str</td><td>SelectQuery</td><td><span class="badge here">déjà dans votre code</span></td></tr><tr><td>vérifier tables et colonnes</td><td><code>à écrire : checker.py</code></td><td>SelectQuery + schéma</td><td>liste de problèmes</td><td><span class="badge next">pas encore codé</span></td></tr><tr><td>exécuter</td><td><code>tests/t2s.py · open_read_only</code></td><td>str (SQL)</td><td>lignes</td><td><span class="badge here">déjà dans votre code</span></td></tr></tbody></table></div>
+<div class="prose"><h3>Trois questions à vous poser</h3><p>Répondez entre vous, puis dépliez.</p></div><details class="more"><summary>Un jeton est un tuple <code>(type, valeur, ligne, colonne)</code> : que se passe-t-il si quelqu'un change l'ordre des champs ?</summary><p>Tout le code qui lit <code>t[1]</code> ou <code>t[3]</code> casse sans message clair. Un <code>NamedTuple</code> ou une <code>dataclass</code> <code>Token</code> rend le contrat explicite, et l'éditeur vous aide.</p></details><details class="more"><summary><code>query_cursor</code> appelle <code>parse_sql(sql)</code> puis exécute le texte : que devient l'arbre ?</summary><p>Il est jeté : le parser sert de garde. C'est suffisant aujourd'hui, mais le vérificateur de schéma aura besoin de l'arbre, il faudra le garder.</p></details><details class="more"><summary>Pourquoi le code qui ouvre la base est-il dans <code>tests/</code> ?</summary><p>Parce que <code>t2s.py</code> est à la fois la ligne de commande, l'accès à la base et l'enchaînement. C'est du code de l'application, pas un test : sa place est dans <code>src/</code>. Vous verrez à l'étape des ajouts pourquoi ça compte.</p></details>
+</section>
+<section id="ajouts" style="--ac:var(--pink)">
+<div class="sh"><div class="n">05</div><div><p class="k">Étape 3 · mettre à l'épreuve</p><h2>Les ajouts, un par un</h2></div></div>
+<dl class="ctx"><dt>Où on en est</dt><dd>Vous avez un découpage tiré du flux du MVP.</dd><dt>Objectif</dt><dd>Vérifier qu'il tient : pour chaque ajout prévu, où faut-il faire le changement, et combien de fichiers faut-il toucher ? Un bon découpage, c'est peu de fichiers par ajout.</dd></dl>
+<div class="prose"><p>Découper en suivant le flux est un bon début, mais ne suffit pas : le découpage doit aussi résister aux changements. On le vérifie en jouant les ajouts prévus, un par un. Pour chacun : le besoin, un exemple concret, puis <b>à vous de choisir où faire le changement</b>, avant de voir la proposition. Les <button type="button" class="term" data-t="interface">interfaces</button> apparaissent quand un ajout en a besoin, pas avant (<button type="button" class="term" data-t="yagni">YAGNI</button>).</p></div>
+<div class="quiz" id="quiz"><div class="qhead"><span class="qn"></span><div class="qdots"><button type="button" aria-label="Point de départ"></button><button type="button" aria-label="Ajout 1"></button><button type="button" aria-label="Ajout 2"></button><button type="button" aria-label="Ajout 3"></button><button type="button" aria-label="Ajout 4"></button><button type="button" aria-label="Ajout 5"></button><button type="button" aria-label="Bilan"></button></div></div><div class="qstep" data-label="Point de départ"><h3 tabindex="-1">Votre code aujourd'hui</h3><div class="map3"><div><div class="colh">entrées</div><div class="fl "><code>tests/t2s.py</code><small>CLI + base + enchaînement</small></div></div><div><div class="colh">cœur</div><div class="fl "><code>src/Lexer.py</code><small>jetons</small></div><div class="fl "><code>src/parser.py</code><small>arbre</small></div><div class="fl "><code>src/sql_ast.py</code><small>nœuds</small></div></div><div><div class="colh">bord</div></div></div><div class="prose"><p><b>Votre code aujourd'hui</b> : quatre fichiers, et une ligne de commande qui part du SQL.</p><p><b>Comment jouer.</b> Pour chacun des 5 ajouts : lisez le besoin et l'exemple, discutez entre vous, choisissez une option (vous verrez pourquoi elle tient ou non), puis affichez la proposition, avec la carte des fichiers touchés. Les mauvaises options ne sont pas des pièges : ce sont les choix qu'on voit souvent.</p></div></div><div class="qstep" data-label="Ajout 1 / 5" hidden><h3 tabindex="-1">Ajout 1 · Accepter ce que le modèle écrit</h3><div class="qblk"><span class="ql">Le besoin</span><p>Le modèle écrit du SQL que votre grammaire ne connaît pas encore : <code>JOIN</code> sans <code>INNER</code>, <code>AVG</code>, <code>DISTINCT</code>. Aujourd'hui, 5 des 12 <button type="button" class="term" data-t="refs">requêtes de référence</button> passent.</p></div><div class="qblk"><span class="ql">Un exemple</span><p>La requête n° 11 (temps moyen par type de média) :</p><pre class="code">SELECT m.Name, AVG(t.Milliseconds) AS avg_ms FROM Track t JOIN MediaType m ON t.MediaTypeId = m.MediaTypeId GROUP BY m.Name</pre><p>Ce que répond votre code ce matin :</p><pre class="code">$ python tests/t2s.py run &quot;&lt;la requête n° 11&gt;&quot;
+Refused: The keyword FROM was expected. Found &#x27;(&#x27; (PUNCTUATION) at line 1, column 19.</pre></div><div class="qblk ask"><span class="ql">À vous</span><p class="qq">Où ce changement doit-il se faire ?</p><div class="qopts"><button type="button" class="qopt no" aria-pressed="false"><span class="qlt">A</span><span class="tx">Dans <code>tests/t2s.py</code> : réécrire <code>JOIN</code> en <code>INNER JOIN</code> avant d'appeler le parser.</span><span class="fb" aria-live="polite"><b class="v">Pas idéal.</b> <code>JOIN</code> passerait, mais <code>AVG</code> et <code>DISTINCT</code> restent refusés. Et la grammaire réelle n'est plus écrite à un seul endroit : une partie se cache dans la ligne de commande, que la future page web devra recopier.</span></button><button type="button" class="qopt yes" aria-pressed="false"><span class="qlt">B</span><span class="tx">Dans la grammaire : <code>Design.md</code> d'abord, puis le lexer, le parser et les nœuds de l'arbre.</span><span class="fb" aria-live="polite"><b class="v">Bon choix.</b> Oui. Le changement porte sur ce que la langue accepte : il touche les fichiers qui la décrivent, et rien d'autre.</span></button><button type="button" class="qopt no" aria-pressed="false"><span class="qlt">C</span><span class="tx">Écrire un <code>AdvancedParser</code> à côté de l'ancien, pour ne rien casser.</span><span class="fb" aria-live="polite"><b class="v">Pas idéal.</b> Deux parsers pour une seule grammaire : chaque correction devra être faite deux fois, et il faudra choisir lequel appeler. Ce qui protège l'ancien comportement, ce sont vos 17 tests : modifiez le parser existant et gardez-les verts.</span></button></div></div><div class="qact"><button type="button" class="qbtn pri qreveal" disabled>Voir la proposition</button><span class="qhint">Choisissez d'abord une option.</span></div><div class="qprop"  hidden><span class="ql" style="font:500 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--ac)">Proposition · fichiers touchés</span><div style="margin-top:10px"><div class="map3"><div><div class="colh">entrées</div><div class="fl "><code>tests/t2s.py</code><small>CLI + base + enchaînement</small></div></div><div><div class="colh">cœur</div><div class="fl active"><code>src/Lexer.py</code><small>jetons</small></div><div class="fl active"><code>src/parser.py</code><small>arbre</small></div><div class="fl active"><code>src/sql_ast.py</code><small>nœuds</small></div></div><div><div class="colh">bord</div></div></div></div><div class="legendst"><span style="--c:var(--green)">fichier nouveau (pointillés)</span><span style="--c:var(--sky)">fichier modifié</span><span style="--c:var(--coral)">un problème se révèle</span></div><p><b>Trois fichiers modifiés, tous dans le <button type="button" class="term" data-t="core">cœur</button>.</b> Aucun fichier d'entrée ni de bord ne bouge : un changement de grammaire reste dans la grammaire. C'est le signe que ce découpage tient. N'oubliez pas <code>Design.md</code> : la grammaire écrite passe avant le code.</p></div></div><div class="qstep" data-label="Ajout 2 / 5" hidden><h3 tabindex="-1">Ajout 2 · Brancher le modèle</h3><div class="qblk"><span class="ql">Le besoin</span><p>Jusqu'ici, on part du SQL. On veut partir de la question en anglais : un <button type="button" class="term" data-t="llm">modèle</button> (Qwen2.5, servi par <button type="button" class="term" data-t="ollama">Ollama</button>) écrit le SQL, puis votre chaîne le contrôle.</p></div><div class="qblk"><span class="ql">Un exemple</span><p>Pour <i>Which customers live in France?</i>, le modèle a répondu, en préparant cette page :</p><pre class="code">SELECT DISTINCT T1.FirstName, T1.LastName FROM Customer AS T1
+JOIN Employee AS T2 ON T1.CustomerId = T2.EmployeeId
+WHERE T2.Country = &#x27;France&#x27;</pre><p>Deux contraintes concrètes : votre <button type="button" class="term" data-t="ci">CI</button> n'a pas Ollama, et une réponse du modèle prend plusieurs secondes et peut changer d'un appel à l'autre.</p></div><div class="qblk ask"><span class="ql">À vous</span><p class="qq">Où appeler le modèle, et comment tester la suite de la chaîne sans lui ?</p><div class="qopts"><button type="button" class="qopt no" aria-pressed="false"><span class="qlt">A</span><span class="tx">Ajouter l'appel HTTP à Ollama directement dans <code>tests/t2s.py</code>.</span><span class="fb" aria-live="polite"><b class="v">Pas idéal.</b> Ça marche sur vos machines, mais aucun test de la chaîne ne peut tourner sans Ollama, donc pas dans la CI. Et la future page web devra recopier l'appel.</span></button><button type="button" class="qopt no" aria-pressed="false"><span class="qlt">B</span><span class="tx">Faire appeler le modèle par le parser : il reçoit la question et demande lui-même le SQL.</span><span class="fb" aria-live="polite"><b class="v">Pas idéal.</b> Le parser dépendrait du réseau : ses tests auraient besoin d'Ollama. Le parser doit rester du Python pur, qui reçoit du texte et rend un arbre.</span></button><button type="button" class="qopt yes" aria-pressed="false"><span class="qlt">C</span><span class="tx">Une interface <code>LLMClient</code> (question et schéma → SQL), une version Ollama, une version factice ; l'enchaînement va dans <code>src/pipeline.py</code>.</span><span class="fb" aria-live="polite"><b class="v">Bon choix.</b> Oui. C'est le premier endroit où deux implémentations existent vraiment : la vraie, et le faux qui rend une réponse écrite à l'avance. L'interface est justifiée par ce besoin, pas « au cas où ».</span></button></div></div><div class="qact"><button type="button" class="qbtn pri qreveal" disabled>Voir la proposition</button><span class="qhint">Choisissez d'abord une option.</span></div><div class="qprop"  hidden><span class="ql" style="font:500 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--ac)">Proposition · fichiers touchés</span><div style="margin-top:10px"><div class="map3"><div><div class="colh">entrées</div><div class="fl bad"><code>tests/t2s.py</code><small>CLI + base + enchaînement</small></div></div><div><div class="colh">cœur</div><div class="fl "><code>src/Lexer.py</code><small>jetons</small></div><div class="fl "><code>src/parser.py</code><small>arbre</small></div><div class="fl "><code>src/sql_ast.py</code><small>nœuds</small></div><div class="fl new"><code>src/pipeline.py</code><small>question → lignes</small></div></div><div><div class="colh">bord</div><div class="fl new"><code>src/llm.py</code><small>Protocol LLMClient</small></div><div class="fl new"><code>src/ollama_client.py</code><small>Ollama</small></div><div class="fl new"><code>tests/fake_llm.py</code><small>réponses écrites</small></div></div></div></div><div class="legendst"><span style="--c:var(--green)">fichier nouveau (pointillés)</span><span style="--c:var(--sky)">fichier modifié</span><span style="--c:var(--coral)">un problème se révèle</span></div><p><b>Quatre fichiers nouveaux</b> : l'interface, le vrai client, le faux, et <code>pipeline.py</code> (question → SQL → arbre → lignes). En rouge, <code>tests/t2s.py</code> : il fait aujourd'hui la ligne de commande, l'enchaînement et l'accès à la base. L'enchaînement en sort ici, la base à l'ajout suivant. L'interface tient en quelques lignes :<pre class="code"># src/llm.py: what the pipeline knows about the model, and nothing more.
+class LLMClient(Protocol):
+    def to_sql(self, question: str, schema: str) -&gt; str: ...
+
+# tests/fake_llm.py: a written answer, no network.
+class FakeLLM:
+    def __init__(self, answer: str) -&gt; None:
+        self.answer = answer
+
+    def to_sql(self, question: str, schema: str) -&gt; str:
+        return self.answer</pre></p></div></div><div class="qstep" data-label="Ajout 3 / 5" hidden><h3 tabindex="-1">Ajout 3 · Vérifier les tables et les colonnes</h3><div class="qblk"><span class="ql">Le besoin</span><p>Le modèle invente parfois un nom de table ou de colonne. Le parser ne peut pas le voir : la phrase est grammaticalement correcte.</p></div><div class="qblk"><span class="ql">Un exemple</span><pre class="code">$ python tests/t2s.py run &quot;SELECT Name FROM Tracks&quot;
+SQLite error: no such table: Tracks</pre><p>La table s'appelle <code>Track</code>. Le refus arrive tard (la base est déjà ouverte) et ne dit pas quelles tables existent : le modèle ne pourra pas s'en servir pour se corriger.</p></div><div class="qblk ask"><span class="ql">À vous</span><p class="qq">Qui doit attraper cette erreur ?</p><div class="qopts"><button type="button" class="qopt yes" aria-pressed="false"><span class="qlt">A</span><span class="tx">Un module <code>src/checker.py</code>, en Python pur, qui lit l'arbre et le schéma ; le schéma est lu une fois dans la base par <code>src/db.py</code>.</span><span class="fb" aria-live="polite"><b class="v">Bon choix.</b> Oui. Le vérificateur ne touche ni la base ni le réseau : il se teste avec un schéma écrit dans le test. Une condition : <b>garder l'arbre</b>, qui est aujourd'hui jeté après le contrôle.</span></button><button type="button" class="qopt no" aria-pressed="false"><span class="qlt">B</span><span class="tx">Personne de plus : SQLite le dit déjà.</span><span class="fb" aria-live="polite"><b class="v">Pas idéal.</b> SQLite refuse, mais après l'ouverture de la base, et sans rien proposer. Pour la réparation (ajout 5), il faut un message du genre « Tracks n'existe pas ; tables existantes : Album, Artist, …, Track ».</span></button><button type="button" class="qopt no" aria-pressed="false"><span class="qlt">C</span><span class="tx">Écrire la liste des tables dans le parser, et refuser les noms inconnus pendant l'analyse.</span><span class="fb" aria-live="polite"><b class="v">Pas idéal.</b> Le parser mélangerait la grammaire (la phrase est-elle bien formée ?) et le sens (ces tables existent-elles ?). Et une liste écrite à la main finit par différer de la base.</span></button></div></div><div class="qact"><button type="button" class="qbtn pri qreveal" disabled>Voir la proposition</button><span class="qhint">Choisissez d'abord une option.</span></div><div class="qprop"  hidden><span class="ql" style="font:500 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--ac)">Proposition · fichiers touchés</span><div style="margin-top:10px"><div class="map3"><div><div class="colh">entrées</div><div class="fl bad"><code>tests/t2s.py</code><small>CLI + base + enchaînement</small></div></div><div><div class="colh">cœur</div><div class="fl "><code>src/Lexer.py</code><small>jetons</small></div><div class="fl "><code>src/parser.py</code><small>arbre</small></div><div class="fl "><code>src/sql_ast.py</code><small>nœuds</small></div><div class="fl new"><code>src/checker.py</code><small>tables, colonnes</small></div><div class="fl active"><code>src/pipeline.py</code><small>question → lignes</small></div></div><div><div class="colh">bord</div><div class="fl "><code>src/llm.py</code><small>Protocol LLMClient</small></div><div class="fl "><code>src/ollama_client.py</code><small>Ollama</small></div><div class="fl "><code>tests/fake_llm.py</code><small>réponses écrites</small></div><div class="fl new"><code>src/db.py</code><small>lecture seule + schéma</small></div></div></div></div><div class="legendst"><span style="--c:var(--green)">fichier nouveau (pointillés)</span><span style="--c:var(--sky)">fichier modifié</span><span style="--c:var(--coral)">un problème se révèle</span></div><p><b>Deux fichiers nouveaux, un modifié.</b> <code>checker.py</code> lit l'arbre et le <button type="button" class="term" data-t="schema">schéma</button> ; <code>db.py</code> reprend <code>open_read_only</code> et lit le schéma ; <code>pipeline.py</code> appelle le vérificateur. <code>tests/t2s.py</code> perd l'accès à la base : il ne lui reste que la ligne de commande et l'affichage.</p></div></div><div class="qstep" data-label="Ajout 4 / 5" hidden><h3 tabindex="-1">Ajout 4 · Une page web</h3><div class="qblk"><span class="ql">Le besoin</span><p>Une page où l'on tape la question et où l'on voit le SQL, puis le refus ou la table. La même chaîne que la ligne de commande, avec une autre entrée.</p></div><div class="qblk"><span class="ql">Un exemple</span><p>Après les ajouts 2 et 3, l'enchaînement est dans <code>src/pipeline.py</code> et la base dans <code>src/db.py</code>. <code>tests/t2s.py</code> lit <code>sys.argv</code>, appelle la chaîne et affiche avec <code>print</code>.</p></div><div class="qblk ask"><span class="ql">À vous</span><p class="qq">Que doit faire <code>web.py</code> ?</p><div class="qopts"><button type="button" class="qopt no" aria-pressed="false"><span class="qlt">A</span><span class="tx">Importer <code>main</code> de <code>tests/t2s.py</code> et l'appeler.</span><span class="fb" aria-live="polite"><b class="v">Pas idéal.</b> <code>main</code> lit <code>sys.argv</code> et écrit avec <code>print</code> : la page ne récupère rien d'utilisable. Et le code de l'application ne doit pas dépendre d'un fichier de <code>tests/</code>.</span></button><button type="button" class="qopt yes" aria-pressed="false"><span class="qlt">B</span><span class="tx">Appeler <code>pipeline.run(question)</code>, comme la ligne de commande, et afficher le résultat.</span><span class="fb" aria-live="polite"><b class="v">Bon choix.</b> Oui : un seul fichier nouveau, qui ne fait qu'afficher. C'est le bénéfice des ajouts 2 et 3.</span></button><button type="button" class="qopt no" aria-pressed="false"><span class="qlt">C</span><span class="tx">Recopier dans <code>web.py</code> l'ouverture de la base et l'enchaînement, pour ne pas dépendre de la ligne de commande.</span><span class="fb" aria-live="polite"><b class="v">Pas idéal.</b> Deux copies à garder identiques. Le jour où l'une oublie <code>mode=ro</code>, la page web peut écrire dans la base.</span></button></div></div><div class="qact"><button type="button" class="qbtn pri qreveal" disabled>Voir la proposition</button><span class="qhint">Choisissez d'abord une option.</span></div><div class="qprop"  hidden><span class="ql" style="font:500 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--ac)">Proposition · fichiers touchés</span><div style="margin-top:10px"><div class="map3"><div><div class="colh">entrées</div><div class="fl active"><code>tests/t2s.py</code><small>CLI + base + enchaînement</small></div><div class="fl new"><code>web.py</code><small>page web</small></div></div><div><div class="colh">cœur</div><div class="fl "><code>src/Lexer.py</code><small>jetons</small></div><div class="fl "><code>src/parser.py</code><small>arbre</small></div><div class="fl "><code>src/sql_ast.py</code><small>nœuds</small></div><div class="fl "><code>src/checker.py</code><small>tables, colonnes</small></div><div class="fl "><code>src/pipeline.py</code><small>question → lignes</small></div></div><div><div class="colh">bord</div><div class="fl "><code>src/llm.py</code><small>Protocol LLMClient</small></div><div class="fl "><code>src/ollama_client.py</code><small>Ollama</small></div><div class="fl "><code>tests/fake_llm.py</code><small>réponses écrites</small></div><div class="fl "><code>src/db.py</code><small>lecture seule + schéma</small></div></div></div></div><div class="legendst"><span style="--c:var(--green)">fichier nouveau (pointillés)</span><span style="--c:var(--sky)">fichier modifié</span><span style="--c:var(--coral)">un problème se révèle</span></div><p><b>Un fichier nouveau</b>, <code>web.py</code>, et <code>tests/t2s.py</code> qui appelle la même fonction. Sans les ajouts 2 et 3, la page web aurait dû importer un fichier de test ou le recopier : <b>un bon découpage, ça se voit au coût de l'ajout suivant</b>.</p></div></div><div class="qstep" data-label="Ajout 5 / 5" hidden><h3 tabindex="-1">Ajout 5 · Réparer : renvoyer l'erreur au modèle</h3><div class="qblk"><span class="ql">Le besoin</span><p>Quand une requête est refusée, on la renvoie au modèle avec le message d'erreur, et il réessaie, deux fois au plus.</p></div><div class="qblk"><span class="ql">Un exemple</span><p>Une vraie demande de réparation, envoyée en préparant cette page :</p><pre class="code">Your previous query was:
+SELECT COUNT(DISTINCT CustomerId) FROM Customer
+It was rejected with this error:
+token 4: expected ), got &#x27;CustomerId&#x27;
+Write a corrected query.</pre><p>Le modèle a renvoyé… la même requête. Réparer n'est pas garanti : d'où la limite d'essais.</p></div><div class="qblk ask"><span class="ql">À vous</span><p class="qq">Où mettre la boucle de réparation ?</p><div class="qopts"><button type="button" class="qopt yes" aria-pressed="false"><span class="qlt">A</span><span class="tx">Dans <code>src/pipeline.py</code> : générer, contrôler, et en cas de refus renvoyer le message au modèle, au plus deux fois.</span><span class="fb" aria-live="polite"><b class="v">Bon choix.</b> Oui. C'est le seul module qui connaît à la fois le modèle et les refus. Avec un faux client qui se trompe une fois puis répond juste, la boucle se teste sans réseau.</span></button><button type="button" class="qopt no" aria-pressed="false"><span class="qlt">B</span><span class="tx">Dans <code>src/ollama_client.py</code>, comme une nouvelle tentative en cas d'échec.</span><span class="fb" aria-live="polite"><b class="v">Pas idéal.</b> Le client Ollama ne sait pas pourquoi la requête est refusée : ce n'est pas lui qui contrôle. Et le faux client n'aurait pas la boucle : elle ne serait jamais testée.</span></button><button type="button" class="qopt no" aria-pressed="false"><span class="qlt">C</span><span class="tx">Dans le parser : en cas d'erreur, il redemande lui-même une requête au modèle.</span><span class="fb" aria-live="polite"><b class="v">Pas idéal.</b> Même problème qu'à l'ajout 2 : le parser dépendrait du modèle. Le parser signale l'erreur avec sa position ; c'est l'enchaînement qui décide quoi en faire.</span></button></div></div><div class="qact"><button type="button" class="qbtn pri qreveal" disabled>Voir la proposition</button><span class="qhint">Choisissez d'abord une option.</span></div><div class="qprop"  hidden><span class="ql" style="font:500 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--ac)">Proposition · fichiers touchés</span><div style="margin-top:10px"><div class="map3"><div><div class="colh">entrées</div><div class="fl "><code>tests/t2s.py</code><small>CLI + base + enchaînement</small></div><div class="fl "><code>web.py</code><small>page web</small></div></div><div><div class="colh">cœur</div><div class="fl "><code>src/Lexer.py</code><small>jetons</small></div><div class="fl "><code>src/parser.py</code><small>arbre</small></div><div class="fl "><code>src/sql_ast.py</code><small>nœuds</small></div><div class="fl "><code>src/checker.py</code><small>tables, colonnes</small></div><div class="fl active"><code>src/pipeline.py</code><small>question → lignes</small></div></div><div><div class="colh">bord</div><div class="fl "><code>src/llm.py</code><small>Protocol LLMClient</small></div><div class="fl "><code>src/ollama_client.py</code><small>Ollama</small></div><div class="fl "><code>tests/fake_llm.py</code><small>réponses écrites</small></div><div class="fl "><code>src/db.py</code><small>lecture seule + schéma</small></div></div></div></div><div class="legendst"><span style="--c:var(--green)">fichier nouveau (pointillés)</span><span style="--c:var(--sky)">fichier modifié</span><span style="--c:var(--coral)">un problème se révèle</span></div><p><b>Un seul fichier modifié.</b> Vos erreurs donnent déjà la ligne et la colonne : le modèle saura où il s'est trompé. Comparez avec l'ajout 2 : plus le découpage avance, moins chaque ajout coûte.</p></div></div><div class="qstep" data-label="Bilan" hidden><h3 tabindex="-1">Le bilan</h3><div class="map3"><div><div class="colh">entrées</div><div class="fl "><code>tests/t2s.py</code><small>CLI + base + enchaînement</small></div><div class="fl "><code>web.py</code><small>page web</small></div></div><div><div class="colh">cœur</div><div class="fl ok"><code>src/Lexer.py</code><small>jetons</small></div><div class="fl ok"><code>src/parser.py</code><small>arbre</small></div><div class="fl ok"><code>src/sql_ast.py</code><small>nœuds</small></div><div class="fl ok"><code>src/checker.py</code><small>tables, colonnes</small></div><div class="fl ok"><code>src/pipeline.py</code><small>question → lignes</small></div></div><div><div class="colh">bord</div><div class="fl active"><code>src/llm.py</code><small>Protocol LLMClient</small></div><div class="fl "><code>src/ollama_client.py</code><small>Ollama</small></div><div class="fl "><code>tests/fake_llm.py</code><small>réponses écrites</small></div><div class="fl active"><code>src/db.py</code><small>lecture seule + schéma</small></div></div></div><div class="legendst"><span style="--c:var(--green)">cœur : se teste sans réseau ni base</span><span style="--c:var(--sky)">frontière avec l'extérieur : le modèle, la base</span></div><div class="prose"><p><b>Deux interfaces justifiées</b> : le modèle (deux implémentations) et la base (lecture seule, schéma). Aucune pour le lexer ou le parser : une seule implémentation, pas d'interface « au cas où ».</p><p>Le nombre de fichiers touchés par ajout :</p></div><div class="qcost"><span><b>3</b>ajout 1</span><span><b>5</b>ajout 2</span><span><b>4</b>ajout 3</span><span><b>2</b>ajout 4</span><span><b>1</b>ajout 5</span></div><div class="prose"><p>Les premiers ajouts coûtent cher parce qu'ils <b>créent</b> le découpage (l'interface du modèle, l'enchaînement, l'accès à la base) ; les derniers ne coûtent qu'un ou deux fichiers. Si, chez vous, un ajout touche presque tous les fichiers, c'est le découpage qu'il faut revoir, pas l'ajout.</p></div></div><div class="qnav"><button type="button" class="qbtn qprev">← Précédent</button><button type="button" class="qbtn pri qnext">Commencer →</button></div></div>
+<div class="prose"><h3>Les mots de cette section</h3><p><button type="button" class="term" data-t="core">Cœur</button> : le code qui calcule sans entrée-sortie. <button type="button" class="term" data-t="adapter">Adaptateur</button> : le code qui parle à l'extérieur. <button type="button" class="term" data-t="fake">Faux</button> : une implémentation écrite à la main pour essayer le reste. <button type="button" class="term" data-t="pipeline">Pipeline</button> : l'enchaînement des étapes.</p></div>
+</section>
+<section id="general" style="--ac:var(--violet)">
+<div class="sh"><div class="n">06</div><div><p class="k">Étape 4 · généraliser</p><h2>Ce que vous avez construit a des noms</h2></div></div>
+<dl class="ctx"><dt>Où on en est</dt><dd>Vous avez construit votre architecture à partir de votre cas.</dd><dt>Objectif</dt><dd>Mettre dessus les noms du cours : ce sont les mots que vous utiliserez en soutenance.</dd></dl>
+<div class="prose"><p>Le cours a présenté des motifs d'architecture. Vous venez d'en assembler plusieurs sans les nommer : une vraie application en compose toujours plusieurs.</p></div>
+<div class="grid2"><div class="card" style="--c:var(--violet)"><h3>Pipeline</h3><p>Votre flux est un pipeline de compilateur : texte → jetons → arbre → lignes. Chaque étape transforme une représentation en une autre, et peut refuser. C'est pourquoi chaque étape se vérifie seule.</p></div><div class="card" style="--c:var(--violet)"><h3>Couches</h3><p>Entrées (ligne de commande, page web), cœur (lexer, parser, vérificateur, enchaînement), bord (modèle, base). Les flèches vont des entrées et du bord vers le cœur.</p></div><div class="card" style="--c:var(--violet)"><h3>Client-serveur</h3><p>Ollama est un serveur HTTP local, votre code en est le client. Avec la page web, on retrouve le 3-tiers du cours : navigateur, serveur, base.</p></div><div class="card" style="--c:var(--violet)"><h3>MVC</h3><p>La page web affiche la question, la requête, le refus ou la table : c'est une vue. Elle appelle <code>pipeline.py</code>, elle ne construit jamais de SQL elle-même.</p></div></div>
+</section>
+<section id="design" style="--ac:var(--green)">
+<div class="sh"><div class="n">07</div><div><p class="k">Ce que vous commitez aujourd'hui</p><h2>Votre DESIGN.md</h2></div></div>
+<dl class="ctx"><dt>Où on en est</dt><dd>Vous avez un découpage, des contrats, et les ajouts qui l'ont mis à l'épreuve.</dd><dt>Objectif</dt><dd>L'écrire dans <code>DESIGN.md</code>, en anglais, avec au moins trois décisions : ce qu'on retient, ce qu'on écarte, pourquoi.</dd></dl>
+<pre class="code">## 1. MVP flow
+steps, and the type passed between them
+
+## 2. Modules and dependencies
+one module per reason to change; who imports whom
+
+## 3. Interfaces
+only where an addition needs two implementations
+
+## 4. Decisions
+### Decision title
+- chosen:
+- rejected:
+- why:
+
+## 5. Plan until December 7
+one brick = one name, and how we know it is done</pre>
+<div class="prose"><h3>Trois décisions à trancher chez vous</h3><p>Écrivez votre choix d'abord, puis dépliez notre avis : une décision différente, bien justifiée, vaut autant.</p></div>
+<details class="more"><summary>Liste blanche ou liste noire ? · Refuse-t-on des mots dangereux, ou n'accepte-t-on que ce que la grammaire décrit ?</summary><p>Une grammaire, donc une liste blanche : ce qui n'est pas dans la grammaire ne s'écrit pas. Plus la lecture seule, en deuxième barrière.</p></details><details class="more"><summary>Qui lit le texte SQL ? · Combien de modules lisent la chaîne écrite par le modèle ?</summary><p>Un seul, le parser. Les autres lisent l'arbre.</p></details><details class="more"><summary>D'où vient le schéma ? · Le schéma est-il écrit dans le code, ou lu dans la base ?</summary><p>Lu dans la base, par le module d'accès à la base. Sinon il finit par diverger.</p></details>
+<div class="prose"><h3>Avant 15h30</h3></div>
+<ul class="todo2"><li><code>DESIGN.md</code> avec les sections 1 à 5, dont trois décisions.</li><li>Un <button type="button" class="term" data-t="spec">commit qui ne touche que la spec</button> : <code>git commit -m "spec: architecture and plan until December 7"</code>, sur une branche, puis une <button type="button" class="term" data-t="pr">PR</button> relue par un autre membre.</li><li>Chacun de l'équipe sait expliquer n'importe quelle flèche du découpage.</li></ul>
+</section>
+<section id="marche" style="--ac:var(--amber)">
+<div class="sh"><div class="n">08</div><div><p class="k">Une proposition pour les deux semaines</p><h2>D'ici le 7 décembre</h2></div></div>
+<dl class="ctx"><dt>Où on en est</dt><dd>Vous avez écrit vos premières décisions.</dd><dt>Objectif</dt><dd>Une proposition pour les deux semaines, à ajuster avec moi dans la section 5 de votre <code>DESIGN.md</code>.</dd></dl>
+<div class="prose"><p>Une question en anglais qui va jusqu'au bout : SQL du modèle, refusé avec un message clair, ou exécuté en lecture seule. Comptez environ <b>3 à 4 heures par personne</b> sur les deux semaines, une brique par personne.</p></div>
+<div class="grid2 brk"><div class="card" style="--c:var(--sky)"><h3><b>A</b>Élargir la grammaire</h3><p><code>JOIN</code> seul, <code>AVG</code>, <code>DISTINCT</code> : la grammaire dans <code>Design.md</code> d'abord, puis le lexer et le parser.</p><p class="done">les 12 requêtes de référence (en bas de cette page) sont acceptées (5 aujourd'hui).</p></div><div class="card" style="--c:var(--violet)"><h3><b>B</b>Le modèle</h3><p>Une interface <code>LLMClient</code>, une version Ollama et un faux client ; <code>src/pipeline.py</code> enchaîne question → SQL → arbre → lignes.</p><p class="done"><code>t2s.py ask "Which customers live in France?"</code> affiche le SQL, puis le refus motivé ou les lignes.</p></div><div class="card" style="--c:var(--pink)"><h3><b>C</b>L'accès à la base dans src/</h3><p><code>open_read_only</code> et la lecture du schéma passent de <code>tests/t2s.py</code> à <code>src/db.py</code>.</p><p class="done"><code>t2s.py</code> ne contient plus que la ligne de commande et l'affichage.</p></div><div class="card" style="--c:var(--teal)"><h3><b>D</b>Le vérificateur</h3><p>Tables, colonnes et alias contrôlés sur l'arbre, contre le schéma lu par <code>db.py</code>.</p><p class="done"><code>SELECT Name FROM Tracks</code> est refusé avec un message qui cite les tables existantes.</p></div></div>
+<div class="prose"><h3>Pour aller plus loin</h3><p>Si la tranche tourne avant le 7, rien ne vous empêche d'attaquer les ajouts suivants, par exemple :</p></div>
+<div class="skip"><span>boucle de réparation</span><span>explication en français</span><span>page web</span><span>banc de mesure sur les 12 questions</span></div>
+<div class="prose"><h3>Le 7 décembre, en début de séance</h3><p>Environ cinq minutes par équipe : la démo de ce qui tourne, ce qui a changé dans <code>DESIGN.md</code> et pourquoi, ce qui a coincé. Puis je choisis qui explique quel fichier.</p>
+<h3>Et ensuite : la séance Test</h3><p>Pas besoin d'arriver avec des tests, mais rien ne vous en empêche : gardez-les verts dans la <button type="button" class="term" data-t="ci">CI</button>. Ce qui vous rendra prêts, c'est la forme du code : un cœur sans entrées-sorties, une interface là où un ajout l'a demandé.</p>
+<p>Pour vous donner une idée des questions du 7 (pas à préparer) :</p><ul><li>Comment montrer que le parser refuse tout ce qui n'est pas un SELECT, sans écrire mille cas à la main ?</li><li>Comment tester <code>pipeline.py</code> sans Ollama ?</li><li>Que doit-on vérifier dans la chaîne complète, et avec quel faux modèle ?</li></ul></div>
+<div class="prose"><h3 id="refs">Les 12 requêtes de référence</h3><p>Les questions et les requêtes attendues utilisées pour préparer cette page : un bon test pour votre grammaire, et plus tard pour mesurer le modèle.</p></div>
+<details class="more"><summary>Afficher les 12 requêtes</summary><div class="tblwrap"><table class="tbl"><thead><tr><th>n°</th><th>question</th><th>requête attendue</th></tr></thead><tbody><tr><td>1</td><td>How many customers are there?</td><td><code>SELECT COUNT(*) FROM Customer</code></td></tr><tr><td>2</td><td>List the names of all genres.</td><td><code>SELECT Name FROM Genre</code></td></tr><tr><td>3</td><td>Which customers live in France? Give first and last names.</td><td><code>SELECT FirstName, LastName FROM Customer WHERE Country = 'France'</code></td></tr><tr><td>4</td><td>What are the 5 longest tracks (name and milliseconds)?</td><td><code>SELECT Name, Milliseconds FROM Track ORDER BY Milliseconds DESC LIMIT 5</code></td></tr><tr><td>5</td><td>How many invoices were billed in each country? Order by number of invoices, highest first.</td><td><code>SELECT BillingCountry, COUNT(*) AS n FROM Invoice GROUP BY BillingCountry ORDER BY n DESC</code></td></tr><tr><td>6</td><td>List the titles of the albums by the artist named 'AC/DC'.</td><td><code>SELECT a.Title FROM Album a JOIN Artist ar ON a.ArtistId = ar.ArtistId WHERE ar.Name = 'AC/DC'</code></td></tr><tr><td>7</td><td>List the names of tracks in the genre 'Jazz' that are longer than 400000 milliseconds.</td><td><code>SELECT t.Name FROM Track t JOIN Genre g ON t.GenreId = g.GenreId WHERE g.Name = 'Jazz' AND t.Milliseconds > 400000</code></td></tr><tr><td>8</td><td>Which employee is the support representative of the customer with CustomerId 1? Give first and last name.</td><td><code>SELECT e.FirstName, e.LastName FROM Customer c JOIN Employee e ON c.SupportRepId = e.EmployeeId WHERE c.CustomerId = 1</code></td></tr><tr><td>9</td><td>What is the total amount invoiced per customer? Show first name, last name and total, for customers whose total is above 45.</td><td><code>SELECT c.FirstName, c.LastName, SUM(i.Total) AS total FROM Customer c JOIN Invoice i ON i.CustomerId = c.CustomerId GROUP BY c.CustomerId, c.FirstName, c.LastName HAVING SUM(i.Total) > 45</code></td></tr><tr><td>10</td><td>How many tracks does each genre have? Show genre name and count, top 3.</td><td><code>SELECT g.Name, COUNT(*) AS n FROM Track t JOIN Genre g ON t.GenreId = g.GenreId GROUP BY g.Name ORDER BY n DESC LIMIT 3</code></td></tr><tr><td>11</td><td>What is the average track length in milliseconds for each media type? Show media type name and average.</td><td><code>SELECT m.Name, AVG(t.Milliseconds) AS avg_ms FROM Track t JOIN MediaType m ON t.MediaTypeId = m.MediaTypeId GROUP BY m.Name</code></td></tr><tr><td>12</td><td>Which 3 artists have the most albums? Show artist name and number of albums.</td><td><code>SELECT ar.Name, COUNT(*) AS n FROM Album a JOIN Artist ar ON a.ArtistId = ar.ArtistId GROUP BY ar.Name ORDER BY n DESC LIMIT 3</code></td></tr></tbody></table></div></details>
+</section>
+<footer><span>TDLOG · séance 7 · projet 15</span><div class="pj"><span>DESIGN.md</span></div></footer>
+</div>
+<script>(function(){var r=document.documentElement,b=document.querySelectorAll(".mode button[data-m]");function set(m){r.setAttribute("data-mode",m);b.forEach(function(x){x.setAttribute("aria-pressed",x.dataset.m===m)});try{localStorage.setItem("doc-mode",m)}catch(e){}}b.forEach(function(x){x.onclick=function(){set(x.dataset.m)}});set(r.getAttribute("data-mode"))})();
+(function(){function T(s){return String(s).replace(/ ([;:?!»%])/g,"\u00a0$1").replace(/« /g,"«\u00a0");}
+function w(n){if(n.nodeType===3){n.nodeValue=T(n.nodeValue);return;}if(n.nodeType!==1||/^(PRE|CODE|SCRIPT|STYLE|SVG)$/i.test(n.tagName))return;for(var c=n.firstChild;c;c=c.nextSibling)w(c);}
+if(document.documentElement.lang==="fr")w(document.querySelector(".page"));})();</script>
+<script>
+/* ===== Bascule de langue FR / EN =====
+   Texte source dans la langue de <html lang>. Traduction d'un bloc : attribut data-en="…html…" (data-fr si la source est en anglais).
+   Attributs : data-en-aria-label, data-en-title, data-en-alt, data-en-placeholder. Deck : data-en-title / data-en-act sur .screen,
+   DECK_CONFIG.i18n={en:{"Partie 1":"Part 1"}} pour les noms de parties. Langue affichée par défaut : <html data-lang-default="en">.
+   ?lang=fr|en force la langue, le choix est mémorisé. Sans traduction dans le contenu, la bascule est masquée. */
+(function(){
+  var r=document.documentElement,SRC=(r.getAttribute("lang")||"fr").slice(0,2),ALT=SRC==="en"?"fr":"en",cur=SRC,
+      K="cc-lang:"+location.pathname,UISEL=".bot,.mode,.notespane",AT=["aria-label","title","alt","placeholder"];
+  function arr(x){return Array.prototype.slice.call(x);}
+  var all=arr(document.querySelectorAll("*")),ui=[],els=[],atts=[];
+  all.forEach(function(e){
+    var isUi=!!e.closest(UISEL);
+    if(isUi){if(e.hasAttribute("data-en")||e.hasAttribute("data-en-aria-label"))ui.push(e);return;}
+    if(e.hasAttribute("data-"+ALT))els.push(e);
+    if(!e.classList.contains("screen"))AT.forEach(function(a){if(e.hasAttribute("data-"+ALT+"-"+a))atts.push([e,a]);});
+  });
+  function swapHtml(e,on,v){if(e.__src==null)e.__src=e.innerHTML;var h=on?v:e.__src;if(e.innerHTML!==h)e.innerHTML=h;}
+  function swapAttr(e,a,on,v){if(!e.__a)e.__a={};if(!(a in e.__a))e.__a[a]=e.getAttribute(a);var x=on?v:e.__a[a];if(x==null)e.removeAttribute(a);else e.setAttribute(a,x);}
+  function paintUi(l){ui.forEach(function(e){
+    if(e.hasAttribute("data-en"))swapHtml(e,l==="en",e.getAttribute("data-en"));
+    if(e.hasAttribute("data-en-aria-label"))swapAttr(e,"aria-label",l==="en",e.getAttribute("data-en-aria-label"));});}
+  var ctl=arr(document.querySelectorAll(".i18n"));
+  if(!els.length&&!atts.length){ctl.forEach(function(e){e.style.display="none";});paintUi(SRC);return;}
+  function set(l,save){
+    if(l!==SRC&&l!==ALT)l=SRC;
+    var on=l===ALT;
+    els.forEach(function(e){swapHtml(e,on,e.getAttribute("data-"+ALT));});
+    atts.forEach(function(x){swapAttr(x[0],x[1],on,x[0].getAttribute("data-"+ALT+"-"+x[1]));});
+    r.setAttribute("lang",l);cur=l;paintUi(l);
+    arr(document.querySelectorAll("[data-l]")).forEach(function(b){b.setAttribute("aria-pressed",String(b.getAttribute("data-l")===l));});
+    if(save)try{localStorage.setItem(K,l);}catch(e){}
+    if(window.__deck&&window.__deck.relang)window.__deck.relang();
+    try{window.dispatchEvent(new CustomEvent("cc:lang",{detail:l}));}catch(e){}
+  }
+  arr(document.querySelectorAll("button[data-l]")).forEach(function(b){b.addEventListener("click",function(){set(b.getAttribute("data-l"),true);});});
+  var tg=document.getElementById("bLang");if(tg)tg.addEventListener("click",function(){set(cur===SRC?ALT:SRC,true);});
+  window.addEventListener("storage",function(e){if(e.key===K&&e.newValue&&e.newValue!==cur)set(e.newValue,false);});
+  var q=/[?&]lang=(fr|en)\b/.exec(location.search),v=q&&q[1];
+  if(!v)try{v=localStorage.getItem(K);}catch(e){}
+  set(v||r.getAttribute("data-lang-default")||SRC,false);
+  window.__lang={set:function(l){set(l,true);},get:function(){return cur;}};
+})();
+</script>
+
+<style id="nav">
+/* Navigation : barre de sections collante, bouton sommaire à gauche de 01, pilule de thème à droite du dernier onglet, sommaire détaillé qui pousse la page */
+html,body{overflow-x:clip}
+.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;box-shadow:0 10px 24px -20px rgba(0,0,0,.6)}
+.toc a.on{background:var(--bg2);color:var(--ink)}
+html body div.mode{top:calc(env(safe-area-inset-top,0px) + (var(--toch,80px) - 36px) / 2);bottom:auto;right:calc(env(safe-area-inset-right,0px) + 14px);box-shadow:none}
+html body div.mode button{padding:7px 10px;font-size:15px}
+.page .toc{padding-left:max(var(--g),66px)!important;scroll-padding-left:max(var(--g),66px);padding-right:max(var(--g),calc(var(--modew,80px) + 24px))!important}
+@media (max-width:899px){.page .toc{margin-right:calc(var(--modew,80px) + 22px);padding-right:12px!important;border-right:1px solid var(--line)}}
+.sidebtn{position:fixed;left:calc(env(safe-area-inset-left,0px) + 14px);top:calc(env(safe-area-inset-top,0px) + (var(--toch,80px) - 38px) / 2);z-index:46;display:flex;align-items:center;gap:0;cursor:pointer;
+ font:400 12.5px/1 var(--sans);letter-spacing:.04em;color:var(--ink);padding:9px 12px;border:1px solid var(--line2);border-radius:99px;
+ background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:none}
+.sidebtn:hover{border-color:var(--gold);color:var(--gold)}
+.sidebtn i{font-style:normal;color:var(--gold)}
+.side{position:fixed;left:0;top:var(--toch,80px);bottom:0;width:min(300px,86vw);z-index:45;overflow-y:auto;overscroll-behavior:contain;
+ padding:64px 18px 28px calc(env(safe-area-inset-left,0px) + 18px);background:var(--bg);border-right:1px solid var(--line2);
+ box-shadow:20px 0 40px -30px rgba(0,0,0,.5);transform:translateX(-102%);transition:transform .3s ease;visibility:hidden}
+.side.open{transform:none;visibility:visible}
+.side .sk{font:500 11px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin:0 0 14px}
+.side ol{list-style:none;margin:0;padding:0}
+.side>ol>li{margin:0 0 14px;padding-left:12px;border-left:2px solid var(--ac)}
+.side a{color:var(--ink2);text-decoration:none;display:block;line-height:1.35}
+.side a:hover,.side a.on{color:var(--ink)}
+.side>ol>li>a{font:500 14px/1.3 var(--sans);color:var(--ink)}
+.side>ol>li>a span{font:italic 450 15px/1 var(--serif);color:var(--ac);margin-right:6px}
+.side ol ol{margin:6px 0 0}
+.side ol ol a{font-size:13px;padding:4px 0}
+.side ol ol a.on{color:var(--ac)}
+:root[data-mode="light"] .side{background:#FFFCF7}
+:target,section [id]{scroll-margin-top:calc(var(--toch,80px) + 16px)}
+section{scroll-margin-top:var(--toch,80px)}
+.page{transition:margin-left .3s ease}
+@media (min-width:900px){html.side-open .page{margin-left:min(300px,86vw)}html.side-open .side{box-shadow:none;top:0;padding-top:calc(var(--toch,80px) + 16px)}}
+@media (prefers-reduced-motion:reduce){.side,.page{transition:none}}
+/* Barre fine : numéro et titre sur une ligne */
+.page .toc a{display:flex;align-items:baseline;gap:8px;padding:11px 14px 12px;white-space:nowrap}
+.page .toc a span{display:inline;font-size:16px;margin:0}
+#sideBtn{height:32px;padding:0 11px;top:calc(env(safe-area-inset-top,0px) + (var(--toch,48px) - 32px) / 2)}
+html body div.mode{height:32px;align-items:center;top:calc(env(safe-area-inset-top,0px) + (var(--toch,48px) - 32px) / 2)}
+html body div.mode button{padding:4px 9px;font-size:14px}
+</style>
+<button class="sidebtn" id="sideBtn" aria-expanded="false" aria-controls="side" aria-label="Sommaire" title="Sommaire" data-en-aria-label="Contents" data-en-title="Contents"><i>☰</i></button>
+<nav class="side" id="side" aria-label="Sommaire détaillé"><p class="sk">Sommaire</p><ol id="sideList"></ol></nav>
+<script>
+(function(){
+ var toc=document.querySelector('.toc'),side=document.getElementById('side'),btn=document.getElementById('sideBtn'),list=document.getElementById('sideList'),r=document.documentElement;
+ var md=document.querySelector('.mode');
+ function h(){r.style.setProperty('--toch',(toc?toc.offsetHeight:0)+'px');if(md)r.style.setProperty('--modew',md.offsetWidth+'px');}h();addEventListener('resize',h);
+ var n=0,links=[];
+ function slug(t){n++;return 's'+n+'-'+t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40);}
+ document.querySelectorAll('.page section[id]').forEach(function(sec){
+  var li=document.createElement('li');li.style.setProperty('--ac',getComputedStyle(sec).getPropertyValue('--ac')||'var(--gold)');
+  var num=sec.querySelector('.sh .n'),h2=sec.querySelector('.sh h2');
+  var a=document.createElement('a');a.href='#'+sec.id;a.innerHTML='<span>'+(num?num.textContent:'')+'</span>'+(h2?h2.textContent:sec.id);li.appendChild(a);links.push([sec,a]);
+  var subs=sec.querySelectorAll('.prose h3,.sub2,.labt');
+  if(subs.length){var ol=document.createElement('ol');subs.forEach(function(s){if(!s.id)s.id=slug(s.textContent);var b=document.createElement('a');b.href='#'+s.id;b.textContent=s.textContent.replace(/^Labo · /,'Labo : ');var l=document.createElement('li');l.appendChild(b);ol.appendChild(l);links.push([s,b]);});li.appendChild(ol);}
+  list.appendChild(li);});
+ function set(o){side.classList.toggle('open',o);r.classList.toggle('side-open',o);btn.setAttribute('aria-expanded',String(o));}
+ btn.onclick=function(){set(!side.classList.contains('open'));};
+ side.addEventListener('click',function(e){if(e.target.closest('a')&&innerWidth<1500)set(false);});
+ addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});
+ var tocLinks=[].slice.call(document.querySelectorAll('.toc a'));
+ function spy(){var y=(toc?toc.offsetHeight:0)+40,cur=null,curSec=null;
+  links.forEach(function(p){if(p[0].getBoundingClientRect().top<=y){cur=p[1];if(p[0].tagName==='SECTION')curSec=p[0];}});
+  links.forEach(function(p){p[1].classList.toggle('on',p[1]===cur||(curSec&&p[0]===curSec));});
+  tocLinks.forEach(function(a){a.classList.toggle('on',!!curSec&&a.getAttribute('href')==='#'+curSec.id);});}
+ addEventListener('scroll',spy,{passive:true});spy();
+})();
+</script>
+
+<script>window.FRAMES={"flow": [{"html": "<div class=\"chain\"><span class=\"on\">question<\/span><span class=\"\">modèle<\/span><span class=\"\">lexer<\/span><span class=\"\">parser<\/span><span class=\"\">exécution<\/span><\/div><div class=\"modtag\">pas encore de code : t2s.py part d'une requête SQL, pas d'une question<span class=\"badge next\">pas encore codé<\/span><\/div><div class=\"io\"><span><b>reçoit<\/b> str (la question)<\/span><span><b>rend<\/b> str<\/span><\/div><pre class=\"code\">Which customers live in France? Give first and last names.<\/pre>", "cap": "<b>La question<\/b>, en anglais. Aujourd'hui votre <code>t2s.py<\/code> part directement du SQL : la question et le modèle sont la prochaine étape."}, {"html": "<div class=\"chain\"><span class=\"done\">question<\/span><span class=\"on\">modèle<\/span><span class=\"\">lexer<\/span><span class=\"\">parser<\/span><span class=\"\">exécution<\/span><\/div><div class=\"modtag\">pas encore de code : un futur module llm.py<span class=\"badge next\">pas encore codé<\/span><\/div><div class=\"io\"><span><b>reçoit<\/b> str (question + schéma)<\/span><span><b>rend<\/b> str (SQL)<\/span><\/div><pre class=\"code\">SELECT DISTINCT T1.FirstName, T1.LastName FROM Customer AS T1\nJOIN Employee AS T2 ON T1.CustomerId = T2.EmployeeId\nWHERE T2.Country = &#x27;France&#x27;<\/pre>", "cap": "<b>Le modèle écrit du SQL<\/b>, ici la vraie réponse de Qwen2.5 0,5B (un petit modèle qui tourne sur un ordinateur portable), obtenue en préparant cette page. Ce texte n'est qu'une proposition : la suite doit le contrôler."}, {"html": "<div class=\"chain\"><span class=\"done\">question<\/span><span class=\"done\">modèle<\/span><span class=\"on\">lexer<\/span><span class=\"\">parser<\/span><span class=\"\">exécution<\/span><\/div><div class=\"modtag\">src/Lexer.py · tokenize<span class=\"badge here\">déjà dans votre code<\/span><\/div><div class=\"io\"><span><b>reçoit<\/b> str (SQL)<\/span><span><b>rend<\/b> list[tuple] : (type, valeur, ligne, colonne)<\/span><\/div><pre class=\"code\">[(&#x27;KEYWORD&#x27;, &#x27;SELECT&#x27;, 1, 1), (&#x27;IDENTIFIER&#x27;, &#x27;DISTINCT&#x27;, 1, 8),\n (&#x27;IDENTIFIER&#x27;, &#x27;T1&#x27;, 1, 17), (&#x27;PUNCTUATION&#x27;, &#x27;.&#x27;, 1, 19), …\n (&#x27;STRING&#x27;, &#x27;France&#x27;, 1, 135), (&#x27;EOF&#x27;, &#x27;&#x27;, 1, 143)]     32 jetons<\/pre>", "cap": "<b>Votre lexer<\/b>, sur la requête du modèle. Chaque jeton est un tuple à quatre champs. Remarquez <code>DISTINCT<\/code> : il sort comme <code>IDENTIFIER<\/code>, pas comme mot-clé."}, {"html": "<div class=\"chain\"><span class=\"done\">question<\/span><span class=\"done\">modèle<\/span><span class=\"done\">lexer<\/span><span class=\"on\">parser<\/span><span class=\"\">exécution<\/span><\/div><div class=\"modtag\">src/parser.py · parse_sql<span class=\"badge here\">déjà dans votre code<\/span><\/div><div class=\"io\"><span><b>reçoit<\/b> str (SQL)<\/span><span><b>rend<\/b> SelectQuery, ou ParserError avec ligne et colonne<\/span><\/div><pre class=\"code\">ParserError: The keyword FROM was expected.\nFound &#x27;T1&#x27; (IDENTIFIER) at line 1, column 17.<\/pre>", "cap": "<b>Surprise n° 1<\/b> : votre parser refuse la requête du modèle, avec la position exacte. La garde fonctionne, mais pour une raison de grammaire : <code>DISTINCT<\/code> et <code>JOIN<\/code> sans <code>INNER<\/code> n'y sont pas. Sur les 12 <button type=\"button\" class=\"term\" data-t=\"refs\">requêtes de référence<\/button> (en bas de cette page), 5 passent aujourd'hui."}, {"html": "<div class=\"chain\"><span class=\"done\">question<\/span><span class=\"done\">modèle<\/span><span class=\"done\">lexer<\/span><span class=\"on\">parser<\/span><span class=\"\">exécution<\/span><\/div><div class=\"modtag\">le parser du prototype de préparation<span class=\"badge next\">si la grammaire acceptait DISTINCT et JOIN<\/span><\/div><div class=\"io\"><span><b>reçoit<\/b> str (SQL)<\/span><span><b>rend<\/b> l'arbre<\/span><\/div><pre class=\"code\">Query(distinct=True)\n  items: Column(T1.FirstName), Column(T1.LastName)\n  table: TableRef(Customer AS T1)\n  joins: Join(Employee AS T2, T1.CustomerId = T2.EmployeeId)\n  where: Compare(T2.Country = &#x27;France&#x27;)<\/pre>", "cap": "<b>Avec une grammaire élargie<\/b>, la requête devient cet arbre. À partir d'ici, plus personne n'a besoin de relire le texte : l'arbre peut servir de contrat."}, {"html": "<div class=\"chain\"><span class=\"done\">question<\/span><span class=\"done\">modèle<\/span><span class=\"done\">lexer<\/span><span class=\"done\">parser<\/span><span class=\"on\">exécution<\/span><\/div><div class=\"modtag\">tests/t2s.py · open_read_only<span class=\"badge here\">déjà dans votre code<\/span><\/div><div class=\"io\"><span><b>reçoit<\/b> str (SQL validé)<\/span><span><b>rend<\/b> lignes<\/span><\/div><pre class=\"code\">requête du modèle : 0 ligne (tous les employés de Chinook sont au Canada)\nrequête attendue  : 5 lignes\n  SELECT FirstName, LastName FROM Customer WHERE Country = &#x27;France&#x27;\n  Camille Bernard · Dominique Lefebvre · Marc Dubois · Wyatt Girard · Isabelle Mercier<\/pre>", "cap": "<b>Surprise n° 2<\/b> : valide, exécutée en lecture seule (<code>mode=ro<\/code> et <code>query_only<\/code>, chez vous), et <b>fausse<\/b>. Le modèle relie un client à un employé par des identifiants sans rapport. Sécurité et justesse sont deux problèmes différents."}]};window.GLOSS={"text2sql": ["Text-to-SQL", "Traduire une question en langage courant (« Quels clients habitent en France ? ») en une requête SQL, puis l'exécuter pour obtenir la réponse."], "chinook": ["Chinook", "Une petite base de données d'exemple, un magasin de musique en ligne : clients, employés, factures, albums, morceaux. Un seul fichier SQLite, <code>Chinook_Sqlite.sqlite<\/code>."], "sql": ["SQL, SELECT", "Le langage des bases de données. <code>SELECT FirstName FROM Customer WHERE Country = 'France'<\/code> lit des lignes ; <code>DELETE<\/code>, <code>DROP<\/code> modifient ou détruisent : c'est ce qu'on veut empêcher."], "llm": ["LLM (modèle de langage)", "Un programme qui continue un texte. Ici on lui donne la question et la liste des tables, et il « continue » avec une requête SQL. Il peut se tromper, ou écrire autre chose que ce qu'on demande."], "ollama": ["Ollama", "Une application qui fait tourner des modèles de langage sur votre ordinateur. Votre code lui envoie une requête HTTP (<code>localhost:11434<\/code>) et reçoit le texte généré."], "lexer": ["Lexer (analyseur lexical)", "Découpe un texte en jetons : <code>SELECT<\/code>, <code>FirstName<\/code>, <code>,<\/code>, <code>'France'<\/code>… Il ne vérifie pas l'ordre des mots, seulement que chaque morceau est reconnaissable."], "token": ["Jeton (token)", "Un morceau de texte avec son type : mot-clé, nom, nombre, chaîne, symbole. Chez vous, un tuple <code>(type, valeur, ligne, colonne)<\/code>."], "parser": ["Parser (analyseur syntaxique)", "Vérifie que les jetons sont dans un ordre permis par la grammaire, et construit l'arbre. S'il bloque, il dit où : ligne, colonne, jeton attendu."], "rd": ["Descente récursive", "Une façon d'écrire un parser : une fonction par règle de la grammaire (<code>parse_select<\/code>, <code>parse_where<\/code>…), qui s'appellent entre elles."], "grammar": ["Grammaire", "La liste des formes de requêtes acceptées, écrite en règles (souvent en EBNF). Ce qui n'est pas dans la grammaire est refusé : c'est une liste blanche."], "ast": ["Arbre syntaxique (AST)", "La requête rangée en objets : une requête a des colonnes, une table, une condition… Les modules suivants lisent cet arbre au lieu de relire le texte."], "dataclass": ["dataclass", "Une classe Python dont on déclare seulement les champs : <code>@dataclass class Token: type: str; value: str<\/code>. Python écrit le constructeur et l'affichage."], "ro": ["Lecture seule", "On ouvre la base avec <code>mode=ro<\/code> (read-only) : même si une requête dangereuse passait, SQLite refuserait d'écrire. Une deuxième barrière, indépendante de la grammaire."], "mvp": ["MVP", "Minimum viable product : la plus petite version qui marche de bout en bout, même pauvre. On l'agrandit ensuite par ajouts."], "module": ["Module", "Un fichier Python (<code>parser.py<\/code>) qui regroupe ce qui va ensemble. Un module devrait avoir une seule raison de changer."], "contract": ["Contrat", "Ce qu'un module attend et ce qu'il rend : un type précis (<code>SelectQuery<\/code>, <code>Token<\/code>). Écrit d'abord, il permet à deux personnes de coder en parallèle."], "interface": ["Interface, Protocol", "Une description des méthodes attendues, sans le code : <code>class LLMClient(Protocol): def complete(self, prompt: str) -> str: ...<\/code>. Toute classe qui a ces méthodes convient."], "adapter": ["Adaptateur", "Le module qui parle à l'extérieur (Ollama, la base, un fichier) et le traduit dans les types du projet. Changer d'extérieur = changer d'adaptateur."], "core": ["Cœur", "Le code qui calcule sans entrée-sortie : pas de fichier, pas de réseau, pas d'écran. Il se vérifie seul, en quelques millisecondes."], "fake": ["Faux (fake)", "Une implémentation écrite à la main d'une interface, pour essayer le reste sans le vrai service. Par exemple un faux modèle qui renvoie toujours la même requête."], "pipeline": ["Pipeline", "Une suite d'étapes où la sortie de l'une est l'entrée de la suivante : texte → jetons → arbre → lignes."], "schema": ["Schéma", "La liste des tables et de leurs colonnes. SQLite la donne avec <code>PRAGMA table_info(...)<\/code>."], "ci": ["CI (intégration continue)", "GitHub relance vos tests à chaque push, sur une machine propre. Une croix rouge sur la PR dit que quelque chose a cassé."], "yagni": ["YAGNI", "« You aren't gonna need it » : n'écrivez pas ce dont vous n'avez pas encore besoin, par exemple une interface qui n'a qu'une seule implémentation."], "spec": ["Commit spec:", "Un commit qui ne touche que la spécification (<code>DESIGN.md<\/code>), jamais le code. Son message commence par <code>spec:<\/code>."], "refs": ["Requêtes de référence", "Douze questions sur Chinook avec la requête SQL attendue, des plus simples aux jointures et agrégats. La liste complète est en bas de cette page, section 07."], "pr": ["Pull request (PR)", "Une demande de fusion d'une branche dans <code>main<\/code>, relue par un autre membre de l'équipe avant d'être acceptée."]};window.FINFO={"t2s": "<b>tests/t2s.py<\/b>La ligne de commande : <code>parse<\/code> affiche l'arbre ou l'erreur, <code>run<\/code> passe par le parser puis exécute sur Chinook en lecture seule (<code>open_read_only<\/code> : <code>mode=ro<\/code> et <code>query_only<\/code>). Elle fait aussi l'enchaînement et l'accès à la base, et elle est rangée dans <code>tests/<\/code>.", "cli": "<b>tests/cli_display.py<\/b>La mise en forme pour la démo : l'arbre clause par clause (<code>format_ast<\/code>) et les résultats en tableau (<code>format_results<\/code>). Importe les nœuds de <code>sql_ast.py<\/code>.", "test": "<b>tests/test_text_to_sql.py<\/b>Les 17 tests <code>unittest<\/code>, en quatre groupes : lexer (5), parser (4, dont 16 requêtes valides et 5 invalides), exécution (3), ligne de commande (5). Importe le lexer, le parser, les nœuds et <code>t2s.py<\/code>.", "parser": "<b>src/parser.py<\/b>Le parser par descente récursive : une classe <code>Parser<\/code> avec une méthode par règle (<code>parse_select_stmt<\/code>, <code>parse_where_clause<\/code>, <code>parse_inner_join<\/code>…). <code>parse_sql(texte)<\/code> appelle le lexer et rend un <code>SelectQuery<\/code>, ou lève <code>ParserError<\/code> avec ligne et colonne.", "lexer": "<b>src/Lexer.py<\/b>Le lexer : <code>tokenize(texte)<\/code> rend une liste de tuples <code>(type, valeur, ligne, colonne)<\/code>. Types : <code>KEYWORD<\/code>, <code>IDENTIFIER<\/code>, <code>NUMBER<\/code>, <code>STRING<\/code>, <code>OPERATOR<\/code>, <code>PUNCTUATION<\/code>, <code>EOF<\/code>. Les mots-clés sont une liste fixe de 20 mots : un mot absent (<code>DISTINCT<\/code>, <code>OR<\/code>) devient un nom.", "ast": "<b>src/sql_ast.py<\/b>Les nœuds de l'arbre, en dataclasses : <code>SelectQuery<\/code>, <code>SelectItem<\/code>, <code>ColumnRef<\/code>, <code>Aggregate<\/code>, <code>TableRef<\/code>, <code>JoinClause<\/code>, <code>Comparison<\/code>, <code>NullCheck<\/code>, <code>HavingCondition<\/code>, <code>OrderItem<\/code>. <code>SelectQuery.join<\/code> n'en contient qu'une.", "db": "<b>data/Chinook_Sqlite.sqlite<\/b>La base d'exemple : un magasin de musique (11 tables : clients, employés, factures, morceaux…).", "explo": "<b>data/explorer_chinook.py<\/b>Un petit script qui liste les tables de Chinook et affiche le schéma de <code>Customer<\/code>, en lecture seule.", "ci": "<b>.github/workflows/tests.yml<\/b>La CI : à chaque push et chaque pull request, GitHub lance <code>python -m unittest discover -s tests<\/code> sous Python 3.12."};</script>
+<script>/* Companion helpers: step player, brick diagrams, small SVG charts. Vanilla JS, no dependency. */
+window.CC = (function () {
+  "use strict";
+  var RM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function fr(x, d) { return Number(x).toFixed(d === undefined ? 2 : d).replace(".", ",").replace("-", "−"); }
+
+  /* Step player: frames = [{cap: html, render: fn(stage) | html: string}] */
+  function player(el, frames, opt) {
+    opt = opt || {};
+    el.classList.add("pl"); el.tabIndex = 0;
+    el.innerHTML = '<div class="pl-stage"></div><p class="pl-cap"></p><div class="ctl"><button type="button" data-a="prev">◀</button>' +
+      '<button type="button" data-a="play">lecture</button><button type="button" data-a="next">▶</button><span class="pl-dots"></span><span class="cnt"></span></div>';
+    var stage = $(".pl-stage", el), cap = $(".pl-cap", el), dots = $(".pl-dots", el), cnt = $(".cnt", el);
+    var bPrev = $('[data-a=prev]', el), bNext = $('[data-a=next]', el), bPlay = $('[data-a=play]', el);
+    if (opt.h) el.style.setProperty("--plh", opt.h + "px");
+    var i = 0, timer = null;
+    dots.innerHTML = frames.map(function (_, k) { return "<i data-k='" + k + "'></i>"; }).join("");
+    function show(k) {
+      i = Math.max(0, Math.min(frames.length - 1, k));
+      var f = frames[i];
+      stage.innerHTML = "";
+      if (f.render) f.render(stage, i); else stage.innerHTML = f.html || "";
+      if (!RM) { stage.classList.remove("fadein"); void stage.offsetWidth; stage.classList.add("fadein"); }
+      cap.innerHTML = f.cap || "";
+      cnt.textContent = (i + 1) + " / " + frames.length;
+      [].forEach.call(dots.children, function (d, k) { d.classList.toggle("on", k === i); });
+      bPrev.disabled = i === 0; bNext.disabled = i === frames.length - 1;
+      if (opt.onShow) opt.onShow(i);
+    }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } bPlay.textContent = "lecture"; }
+    bPrev.onclick = function () { stop(); show(i - 1); };
+    bNext.onclick = function () { stop(); show(i + 1); };
+    bPlay.onclick = function () {
+      if (timer) { stop(); return; }
+      if (i === frames.length - 1) show(0);
+      bPlay.textContent = "pause";
+      timer = setInterval(function () { if (i >= frames.length - 1) stop(); else show(i + 1); }, opt.ms || 2600);
+    };
+    dots.onclick = function (e) { var k = e.target.getAttribute("data-k"); if (k !== null) { stop(); show(+k); } };
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight") { e.preventDefault(); stop(); show(i + 1); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); stop(); show(i - 1); }
+    });
+    show(0);
+    return { show: show, get i() { return i; } };
+  }
+
+  /* Brick diagram: rows of node ids; steps = [{on: [ids], cap}] played by a player. */
+  var KIND = { data: "donnée", fn: "brique", test: "test", store: "stockage", ext: "extérieur", bad: "refusé" };
+  function bricks(el, spec) {
+    var rows = spec.rows || [spec.nodes.map(function (n) { return n.id; })];
+    var byId = {}; spec.nodes.forEach(function (n) { byId[n.id] = n; });
+    function draw() {
+      return '<div class="bricks">' + rows.map(function (r) {
+        return '<div class="row">' + r.map(function (id, k) {
+          var n = byId[id];
+          return (k ? '<span class="arw" data-to="' + id + '">→</span>' : "") +
+            '<div class="bk ' + (n.k || "fn") + '" data-id="' + id + '"><span class="kd">' + (n.kd || KIND[n.k || "fn"]) + '</span><span class="tt">' + n.t + "</span>" + (n.s ? '<span class="ss">' + n.s + "</span>" : "") + "</div>";
+        }).join("") + "</div>";
+      }).join("") + "</div>";
+    }
+    var steps = spec.steps || [{ on: [], cap: spec.cap || "" }];
+    var frames = steps.map(function (s) {
+      return { cap: s.cap, render: function (stage) {
+        stage.innerHTML = draw();
+        var b = $(".bricks", stage);
+        if (s.on && s.on.length) {
+          b.classList.add("playing");
+          s.on.forEach(function (id) {
+            var n = $('[data-id="' + id + '"]', b); if (n) n.classList.add("lit");
+            var a = $('[data-to="' + id + '"]', b); if (a) a.classList.add("lit");
+          });
+        }
+      } };
+    });
+    return player(el, frames, { ms: spec.ms || 3000, h: spec.h || 120 });
+  }
+
+  /* Line chart. series: [{pts:[[x,y]...], c:"var(--gold)", w, dash}] */
+  function line(series, o) {
+    var W = o.W || 720, H = o.H || 260, L = o.L || 52, R = 14, T = 12, B = 30;
+    var x0 = o.xmin, x1 = o.xmax, y0 = o.ymin, y1 = o.ymax;
+    function X(x) { return L + (W - L - R) * (x - x0) / (x1 - x0); }
+    function Y(y) { if (o.log) { y = Math.log10(y); } var a = o.log ? Math.log10(y0) : y0, b = o.log ? Math.log10(y1) : y1; return T + (H - T - B) * (1 - (y - a) / (b - a)); }
+    var s = '<svg class="ch" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(o.label || "graphique") + '">';
+    (o.yt || []).forEach(function (t) { var y = Y(t[0]); s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" stroke="var(--line)"/><text x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + t[1] + "</text>"; });
+    (o.xt || []).forEach(function (t) { s += '<text x="' + X(t[0]) + '" y="' + (H - 9) + '" text-anchor="middle">' + t[1] + "</text>"; });
+    (o.bands || []).forEach(function (b) { s += '<rect x="' + X(b[0]) + '" y="' + T + '" width="' + (X(b[1]) - X(b[0])) + '" height="' + (H - T - B) + '" fill="' + b[2] + '"/>'; });
+    s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + (H - B) + '" y2="' + (H - B) + '" stroke="var(--line2)"/>';
+    series.forEach(function (se) {
+      var d = se.pts.map(function (p, k) { return (k ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1); }).join("");
+      s += '<path d="' + d + '" fill="none" stroke="' + se.c + '" stroke-width="' + (se.w || 2) + '"' + (se.dash ? ' stroke-dasharray="' + se.dash + '"' : "") + "/>";
+    });
+    (o.dots || []).forEach(function (m) { s += '<circle cx="' + X(m[0]) + '" cy="' + Y(m[1]) + '" r="' + (m[3] || 4) + '" fill="' + m[2] + '"/>' + (m[4] ? '<text class="lab" x="' + (X(m[0]) + 7) + '" y="' + (Y(m[1]) - 7) + '">' + m[4] + "</text>" : ""); });
+    return s + "</svg>";
+  }
+
+  /* Horizontal bars: items [{t, v, c, note}] with v in [0, max] */
+  function bars(items, o) {
+    o = o || {};
+    var max = o.max || Math.max.apply(null, items.map(function (i) { return i.v; }));
+    return '<div style="display:grid;gap:7px">' + items.map(function (it) {
+      return '<div style="display:grid;grid-template-columns:' + (o.lw || "150px") + ' 1fr ' + (o.vw || "70px") + ';gap:10px;align-items:center;font-size:13.5px">' +
+        '<span style="color:var(--ink2);font-family:' + (o.mono ? "var(--mono)" : "inherit") + '">' + it.t + "</span>" +
+        '<span style="height:14px;background:var(--line);border-radius:99px;overflow:hidden"><i style="display:block;height:100%;width:' + (100 * it.v / max).toFixed(1) + "%;background:" + (it.c || "var(--ac)") + ';transition:width .5s"></i></span>' +
+        '<span class="mono" style="color:var(--ink);text-align:right">' + (it.l !== undefined ? it.l : it.v) + "</span></div>";
+    }).join("") + "</div>";
+  }
+
+  function legend(items) {
+    return '<div class="legend">' + items.map(function (i) { return '<span class="' + (i.dash ? "d" : "") + '" style="--lc:' + i.c + '">' + i.t + "</span>"; }).join("") + "</div>";
+  }
+
+  function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  /* Auto-init brick diagrams declared as <div data-bricks="NAME"> with window.BRICKS[NAME]. */
+  function init() {
+    [].forEach.call(document.querySelectorAll("[data-bricks]"), function (el) { bricks(el, window.BRICKS[el.getAttribute("data-bricks")]); });
+  }
+  return { player: player, bricks: bricks, line: line, bars: bars, legend: legend, esc: esc, fr: fr, rng: mulberry, RM: RM, init: init, $: $ };
+})();
+</script>
+<script>(function(){"use strict";
+var F=window.FRAMES;
+[].forEach.call(document.querySelectorAll("[data-frames]"),function(el){CC.player(el,F[el.getAttribute("data-frames")],{ms:5200,h:120});});
+var G=window.GLOSS,box=document.createElement("div");box.id="gloss";box.hidden=true;box.setAttribute("role","dialog");document.body.appendChild(box);var cur=null;
+function close(){box.hidden=true;if(cur)cur.setAttribute("aria-expanded","false");cur=null;}
+document.addEventListener("click",function(e){var b=e.target.closest?e.target.closest(".term"):null;
+ if(!b){if(!box.contains(e.target))close();return;}
+ if(cur===b){close();return;}
+ var g=G[b.getAttribute("data-t")];if(!g)return;close();cur=b;b.setAttribute("aria-expanded","true");
+ box.innerHTML="<b>"+g[0]+"</b>"+g[1];box.hidden=false;
+ var r=b.getBoundingClientRect(),w=Math.min(360,innerWidth*0.88),x=Math.max(12,Math.min(r.left+scrollX,scrollX+innerWidth-w-12));
+ box.style.left=x+"px";box.style.top=(r.bottom+scrollY+8)+"px";});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")close();});
+})();</script>
+<script>(function(){var I=window.FINFO,box=document.getElementById("finfo");if(!box||!I)return;
+function show(g){[].forEach.call(document.querySelectorAll(".repomap .fbox"),function(x){x.classList.toggle("on",x===g);});box.innerHTML=I[g.getAttribute("data-f")];}
+[].forEach.call(document.querySelectorAll(".repomap .fbox"),function(g){g.addEventListener("click",function(){show(g);});g.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();show(g);}});});
+})();</script>
+<script>(function(){"use strict";
+var q=document.getElementById("quiz");if(!q)return;
+var steps=q.querySelectorAll(".qstep"),dots=q.querySelectorAll(".qdots button"),cur=0,seen={0:true};
+function show(i,focus){cur=Math.max(0,Math.min(steps.length-1,i));seen[cur]=true;
+ [].forEach.call(steps,function(s,j){s.hidden=j!==cur;});
+ [].forEach.call(dots,function(d,j){if(j===cur)d.setAttribute("aria-current","step");else d.removeAttribute("aria-current");d.classList.toggle("done",!!seen[j]&&j!==cur);});
+ q.querySelector(".qn").textContent=steps[cur].getAttribute("data-label");
+ q.querySelector(".qprev").disabled=cur===0;var nx=q.querySelector(".qnext");nx.disabled=cur===steps.length-1;
+ nx.textContent=cur===0?"Commencer →":cur===steps.length-2?"Le bilan →":"Ajout suivant →";
+ if(focus){var h=steps[cur].querySelector("h3");if(h)h.focus({preventScroll:true});var r=q.getBoundingClientRect();if(r.top<0||r.top>innerHeight*.6)q.scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});}}
+q.addEventListener("click",function(e){var o=e.target.closest(".qopt");
+ if(o&&!e.target.closest(".term")){o.setAttribute("aria-pressed","true");var st=o.closest(".qstep"),rv=st.querySelector(".qreveal");if(rv){rv.disabled=false;st.querySelector(".qhint").textContent="Comparez maintenant avec la proposition, ou essayez une autre option.";}return;}
+ var rv2=e.target.closest(".qreveal");if(rv2){var p=rv2.closest(".qstep").querySelector(".qprop");p.hidden=false;rv2.hidden=true;rv2.closest(".qstep").querySelector(".qhint").textContent="";return;}
+ if(e.target.closest(".qprev")){show(cur-1,true);return;}
+ if(e.target.closest(".qnext")){show(cur+1,true);return;}
+ var d=e.target.closest(".qdots button");if(d){show([].indexOf.call(dots,d),true);}});
+show(0,false);
+})();</script>
+<style id="cc-theme">#bTheme span{opacity:.45;padding:0 .2em}#bTheme span[aria-pressed="true"]{opacity:1;color:var(--gold);font-weight:600}</style>
+<script id="cc-theme-js">(function(){
+ var d=document.documentElement,mq=matchMedia("(prefers-color-scheme: light)"),K="cc-mode",ORDER=["system","dark","light"],pref=d.getAttribute("data-theme")||"system";
+ function apply(){var m=pref==="system"?(mq.matches?"light":"dark"):pref;d.setAttribute("data-mode",m);d.setAttribute("data-theme",pref);
+  document.querySelectorAll(".mode button[data-m],#bTheme [data-m]").forEach(function(b){b.setAttribute("aria-pressed",String(b.getAttribute("data-m")===pref));});
+  try{dispatchEvent(new CustomEvent("cc:mode",{detail:m}));}catch(e){}}
+ function set(p,save){if(ORDER.indexOf(p)<0)return;pref=p;if(save)try{localStorage.setItem(K,p);}catch(e){}apply();}
+ function cycle(){set(ORDER[(ORDER.indexOf(pref)+1)%3],true);}
+ function onSys(){if(pref==="system")apply();}
+ if(mq.addEventListener)mq.addEventListener("change",onSys);else if(mq.addListener)mq.addListener(onSys);
+ addEventListener("storage",function(e){if(e.key===K&&e.newValue)set(e.newValue,false);});
+ document.querySelectorAll(".mode button[data-m]").forEach(function(b){b.onclick=function(){set(b.getAttribute("data-m"),true);};});
+ var bt=document.getElementById("bTheme");
+ if(bt){bt.onclick=function(){cycle();bt.blur();};
+  addEventListener("keydown",function(e){var t=e.target||{};if((e.key==="t"||e.key==="T")&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName||"")&&!t.isContentEditable){e.stopImmediatePropagation();e.preventDefault();cycle();}},true);}
+ apply();
+})();</script>
+</body></html>
